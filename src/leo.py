@@ -14,14 +14,14 @@ def main():
     compara('../leo/rub_1.png', '../leo/rub1.png')
     
 def compara(imgPathA, imgPathB):    
-    contornosMatrixA, imgA, impressoA = extraiContorno(imgPathA)
-    contornosMatrixB, imgB, impressoB = extraiContorno(imgPathB)
+    imgA, impressoA = extraiContorno(imgPathA)
+    imgB, impressoB = extraiContorno(imgPathB)
 
-    colorA  = resizeFix(cv.imread(imgPathA, cv.IMREAD_COLOR), 450)
+    """colorA  = resizeFix(cv.imread(imgPathA, cv.IMREAD_COLOR), 450)
     cv.drawContours(colorA, impressoA, -1, (0,255,0), 1)
     cv.drawContours(colorA, impressoB, -1, (0,0,255), 1)
     cv.imshow("imgA", colorA)
-    cv.waitKey(0)   
+    cv.waitKey(0)   """
 
     pontoA = criaPesquisavel(imgA, impressoA)
     pontoB = criaPesquisavel(imgB, impressoB)
@@ -70,7 +70,7 @@ def extraiContorno(path):
     #cv.imshow("color", color)
     #cv.waitKey(0)    
 
-    return contours, img, [cnts]
+    return img, [cnts]
 
 def resizeFix(image, size):
     return cv2.resize(image, (size,size), interpolation = cv2.INTER_AREA)
