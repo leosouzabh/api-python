@@ -72,3 +72,9 @@ def show(label, mat):
 
 def color():
     return (random.randint(1,255), random.randint(1,255),random.randint(1,255))
+
+def buildPath(id, path=''):
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, '../data/'+id+'/'+path)
+    return filename
+
