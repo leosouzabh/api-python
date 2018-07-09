@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from json import dumps
 #from src.processamento import Processamento
 import os
+import cv2
 
 app = Flask(__name__)
 api = Api(app)
