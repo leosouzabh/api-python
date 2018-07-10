@@ -1,4 +1,4 @@
 git status
 git add .
 git commit -m "updates"
-git push heroku master
+git push origim master
