@@ -1,6 +1,5 @@
 import os
 import cv2 
-import matplotlib.pyplot as plt
 import numpy as np
 import mahotas
 from scipy.spatial import distance as dist
