@@ -2,10 +2,11 @@ from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from json import dumps
 from src.processamento import Processamento
+from os import listdir
 import os
 import cv2
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 api = Api(app)
 
 class ProcessamentoRest(Resource):
@@ -21,11 +22,13 @@ class ProcessamentoRest(Resource):
 
 class IndexRest(Resource):
     def get(self):
-        return "ok"    
+        dirname = os.path.dirname(__file__)
+        print(dirname)
+        return listdir(dirname + '/static')
 
 api.add_resource(ProcessamentoRest, '/processamento') 
 api.add_resource(IndexRest, '/') 
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)

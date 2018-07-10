@@ -72,6 +72,6 @@ def color():
 
 def buildPath(id, path=''):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, '../data/'+id+'/'+path)
+    filename = os.path.join(dirname, '../static/'+id+'/'+path)
     return filename
 
