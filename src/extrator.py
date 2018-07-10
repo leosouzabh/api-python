@@ -4,18 +4,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import mahotas
 from scipy.spatial import distance as dist
-import utils
+import src.utils as utils
+import src.names as names
 
 blurI = 5
-def extrai(path):
+def extrai(path, identificador):
     color = cv2.imread(path, -1)
     color = cv2.resize(color, (0, 0), fx = 0.3, fy = 0.3)
     imgOriginal = color.copy()
     color = utils.removeSombras(color)
-    utils.save('semSombra.jpg', color)
+    utils.save('semSombra.jpg', color, id=identificador)
     
     imgGray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
-    utils.save('pb1.jpg', imgGray)
+    utils.save('pb1.jpg', imgGray, id=identificador)
     #imgGray = rotate_bound(imgGray, 90)
     #utils.save('pb2.jpg', imgGray)
 
@@ -23,10 +24,10 @@ def extrai(path):
     #utils.save('blur.jpg', imgGray)
 
     imgGray, contours =  extraiContornos(imgGray)
-    utils.save('thr.jpg', imgGray)
-    cnts = sorted(contours, key=functionSort, reverse=True)[0:5]
+    utils.save('thr.jpg', imgGray, id=identificador)
+    cnts2 = sorted(contours, key=functionSort, reverse=True)[0:5]
     
-    printaContornoEncontrado(imgOriginal, cnts)
+    printaContornoEncontrado(imgOriginal, cnts2, identificador)
 
     originalEmGray = cv2.cvtColor(imgOriginal, cv2.COLOR_BGR2GRAY)
     #originalHisto = cv2.equalizeHist(originalEmGray)
@@ -34,12 +35,12 @@ def extrai(path):
     lista = dict()
     cntArr = dict()
 
-    for i, c in enumerate(cnts):
+    for i, c in enumerate(cnts2):
         if cv2.contourArea(c) > 100:
             x, y, w, h = cv2.boundingRect(c)
             b = 10
             roi = imgOriginal[y-b:y + h+b, x-b:x + w+b]
-            utils.save('roi_{}.jpg'.format(i), roi)
+            utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
             #utils.save('_1_hist_{}.jpg'.format(i), roi)
 
             #resized = utils.resize(roi, w, interpolation = cv2.INTER_AREA)
@@ -51,24 +52,14 @@ def extrai(path):
             
             #resized = cv2.blur(resized, (5,5))
             retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-            utils.save('t_{}.jpg'.format(i), resized)
+            utils.save('t_{}.jpg'.format(i), resized, id=identificador)
             resized = utils.dilatation(resized, ratio=1.0)
             
-            utils.save('t1_{}.jpg'.format(i), resized)
+            utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
             im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             cnts = sorted(contours2, key=functionSort, reverse=True)[0]
-
-            
-            """
-            debugMat = np.zeros(roi.shape, dtype = "uint8")
-            cv2.drawContours(debugMat, [cnts], -1, 255, -1 )
-            debugMat = cv2.resize(debugMat, (700,700), interpolation = cv2.INTER_AREA)
-            #utils.show("teste", debugMat)
-            """
-
-
-
+ 
             roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
             novaMat = np.zeros(roi.shape, dtype = "uint8")
             cv2.drawContours(novaMat, [cnts], -1, 255, -1)
@@ -77,7 +68,7 @@ def extrai(path):
             #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
             lista[i] = cnts
             cntArr[i] = cnts
-            utils.save('_img_{}.jpg'.format(i), novaMat)
+            utils.save('_img_{}.jpg'.format(i), novaMat, id=identificador)
             
 
     #utils.show(color)
@@ -85,7 +76,10 @@ def extrai(path):
     hd = cv2.createHausdorffDistanceExtractor()
     sd = cv2.createShapeContextDistanceExtractor()
 
+
     
+    
+    imgResultado = imgOriginal.copy()
     for idx1 in range(0,5):
         item1 = lista[idx1]
         soma = 0
@@ -98,8 +92,22 @@ def extrai(path):
             #match = cv2.matchShapes(cntArr[idx1], cntArr[idx2], 1, 0.0)
             #match = round(match, 4)
             print('{} vs {}   ==   {}'.format(idx1, idx2, match) )
+
+            
+            if ( soma < 9 ):
+                imgResultado = contorna(imgResultado, cnts2[idx1], (0,255,0))
+            elif (soma >= 9 and soma < 20):
+                imgResultado = contorna(imgResultado, cnts2[idx1], (0,165,255))
+            else:
+                imgResultado = contorna(imgResultado, cnts2[idx1], (0,0,255))
+                
+
+
         print('Soma: ' + str(soma))
         print()
+
+    utils.save(names.RESULTADO, imgResultado, id=identificador)
+    
 
     #print(len(lista))
     return lista
@@ -127,13 +135,19 @@ def functionSort(c):
     return w * h
 
 
-def printaContornoEncontrado(img, cnts):
+def contorna(img, contorno, cor):
+    cv2.drawContours(img, [contorno], -1, cor, 4)
+    return img
+
+def printaContornoEncontrado(img, cnts, identificador):
     imgContorno = img.copy()
 
     for idx1,c in enumerate(cnts):
-        cv2.drawContours(imgContorno, [c], -1, utils.color(), 4)
+        cor = utils.color()
+        print(cor)
+        cv2.drawContours(imgContorno, [c], -1, cor, 4)
 
-    utils.save('contornado.jpg', imgContorno)
+    utils.save('contornado.jpg', imgContorno, id=identificador)
 
 #TODO ajustar esse metodo
 def ajustaContorno(contours2):
@@ -211,36 +225,6 @@ def rotateAndScale(img, scaleFactor = 0.5, degreesCCW = 30):
     return rotatedImg
 
 if __name__ == '__main__':
-
-    """
-    img1 = cv2.imread('../bloco.jpg')
-    img1 = utils.removeSombras(img1)
-    a = np.double(img1)
-    b = a + 30
-    img2 = np.uint8(b)
-    utils.show("frame",img1)
-    utils.show("frame2",img2)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    """
-    
-    """    
-    img = cv2.imread('../bloco.jpg', 0)
-    img = utils.removeSombras(img)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(10,10))
-    equ = clahe.apply(img)
-    #equ = cv2.equalizeHist(img)
-    res = np.hstack((img,equ)) #stacking images side-by-side
-    utils.show("frame",res)
-    
-    gamma = 0.3      
-    img = cv2.imread('../bloco.jpg', 0)
-    img = utils.removeSombras(img)
-    equ = adjust_gamma(img, gamma=0.3)
-    #equ = cv2.equalizeHist(img)
-    res = np.hstack((img,equ)) #stacking images side-by-side
-    utils.show("frame",res)
-    """
 
     for x in range(1,6):
         utils.indice = str(x)

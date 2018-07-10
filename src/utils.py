@@ -17,12 +17,9 @@ def dilatation(src, ratio=1):
     return dilatation_dst
 
 
-def save(name, img):
-    path = 'C:/dev/git/python/api/data/'+indice
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    cv2.imwrite(os.path.join(path , name), img)
+def save(name, img, id='999'):
+    path = buildPath(id, path=name)
+    cv2.imwrite(path, img)
 
 
 def removeSombras(img):
