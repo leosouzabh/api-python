@@ -90,7 +90,7 @@ def extrai(path, identificador):
             soma += match
             #match = cv2.matchShapes(cntArr[idx1], cntArr[idx2], 1, 0.0)
             #match = round(match, 4)
-            out += '{} vs {}   ==   {}\r\n'.format(idx1, idx2, match) 
+            out += '{} vs {}   ==   {}\n'.format(idx1, idx2, match) 
             
 
             
@@ -103,8 +103,8 @@ def extrai(path, identificador):
                 
 
 
-        out += 'Soma: ' + str(soma) + '\r\n'
-        out += '\r\n'
+        out += 'Soma: ' + str(soma) + '\n'
+        out += '\n'
 
         pathTxt = utils.buildPath(identificador, path="calc.txt")
         with open(pathTxt, "w") as text_file:

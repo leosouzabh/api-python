@@ -14,6 +14,10 @@
             div.slot {
                 text-align: center;
             }
+            div.texto {
+                font-family: Courier New, Courier, monospace;
+                font-size: 11px;
+            }
         </style>
 
     </head>
@@ -26,9 +30,9 @@
                             <a href="#" class="navbar-brand">Brand</a>                        
                         </div>
                     </nav>
-                    <div class="container">
+                    <div class="container1">
                         <div class="row">
-                            <div class="hidden-xs col-sm-3">
+                            <div class="hidden-xs col-sm-2">
                                 <div class="panel-group">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
@@ -48,14 +52,19 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-9">
+                            <div class="col-xs-12 col-sm-10">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h3 class="panel-title">Conteudo</h3>
                                     </div>
                                     <div class="panel-body">
-                                        <div class="row" id="conteudo">
-                                            
+                                        <div class="row">
+                                            <div class="col-xs-4" id="texto">
+                                                texto
+                                            </div>
+                                            <div class="col-xs-8" id="conteudo">
+                                                
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -77,21 +86,29 @@
         });
 
         function load(data){
-            $("#conteudo").empty();
 
-            var conteudo = ['contornado.jpg', 'pb1.jpg', 'roi_0.jpg', 'roi_1.jpg', 'roi_2.jpg', 'roi_3.jpg', 
+            
+            $.get( "../"+data+"/calc.txt", function( data ) {
+                data = data.replace(/(?:\r\n|\r|\n)/g, '<br/>');
+                $("#texto").empty();
+                $("#texto").append(data);
+            });
+
+
+            var conteudo = ['__inicial.jpg', '__resultado.jpg', 'contornado.jpg', 'pb1.jpg', 'roi_0.jpg', 'roi_1.jpg', 'roi_2.jpg', 'roi_3.jpg', 
                 'roi_4.jpg', 'semSombra.jpg', 't1_0.jpg', 't1_1.jpg', 't1_2.jpg', 't1_3.jpg', 't1_4.jpg', 
                 'thr.jpg', 't_0.jpg', 't_1.jpg', 't_2.jpg', 't_3.jpg', 't_4.jpg', '_img_0.jpg', '_img_1.jpg', 
-                '_img_2.jpg', '_img_3.jpg', '_img_4.jpg', '__inicial.jpg', '__resultado.jpg'];
-
+                '_img_2.jpg', '_img_3.jpg', '_img_4.jpg'];
+            $("#conteudo").empty();
             $(conteudo).each(function(i,e){
+                var html = '<div class="col-xs-6 slot">'+
+                '    <img src="../'+data+'/'+e+'" class="img-redu img-thumbnail" />'+
+                '    <div class="leo-label">'+e+'</div>'+
+                '</div>';
                 
-                $("#conteudo").append('<div class="col-xs-6 slot">'+
-                '    <img src=\'../'+data+'/'+e+'\' class="img-redu img-thumbnail" />'+
-                '    <div class="leo-label">Label</div>'+
-                '</div>')
-
+                $("#conteudo").append(html);
             });
+
 
 
         }
