@@ -77,7 +77,7 @@ def extrai(path, identificador):
 
 
     
-    
+    out = ""
     imgResultado = imgOriginal.copy()
     for idx1 in range(0,5):
         item1 = lista[idx1]
@@ -90,7 +90,8 @@ def extrai(path, identificador):
             soma += match
             #match = cv2.matchShapes(cntArr[idx1], cntArr[idx2], 1, 0.0)
             #match = round(match, 4)
-            print('{} vs {}   ==   {}'.format(idx1, idx2, match) )
+            out += '{} vs {}   ==   {}\r\n'.format(idx1, idx2, match) 
+            
 
             
             if ( soma < 9 ):
@@ -102,8 +103,12 @@ def extrai(path, identificador):
                 
 
 
-        print('Soma: ' + str(soma))
-        print()
+        out += 'Soma: ' + str(soma) + '\r\n'
+        out += '\r\n'
+
+        pathTxt = utils.buildPath(identificador, path="calc.txt")
+        with open(pathTxt, "w") as text_file:
+            text_file.write(out)
 
     utils.save(names.RESULTADO, imgResultado, id=identificador)
     
