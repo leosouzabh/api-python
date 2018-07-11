@@ -75,3 +75,8 @@ def buildPath(id, path=''):
     filename = os.path.join(dirname, '../static/'+id+'/'+path)
     return filename
 
+def buildPathRoot():
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, '../static/')
+    return filename
+

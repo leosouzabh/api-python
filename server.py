@@ -5,6 +5,7 @@ from src.processamento import Processamento
 from os import listdir
 import os
 import cv2
+import src.utils as utils
 
 app = Flask(__name__, static_url_path='/static')
 api = Api(app)
@@ -22,9 +23,8 @@ class ProcessamentoRest(Resource):
 
 class IndexRest(Resource):
     def get(self):
-        dirname = os.path.dirname(__file__)
-        print(dirname)
-        return listdir(dirname + '/static')
+        dirname = utils.buildPathRoot()
+        return listdir(dirname)
 
 api.add_resource(ProcessamentoRest, '/processamento') 
 api.add_resource(IndexRest, '/') 
