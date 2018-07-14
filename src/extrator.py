@@ -116,7 +116,7 @@ def extrai(path, identificador):
             
             ida = round(ida, 5)
             volta = round(volta, 5)
-            out += '{} vs {}   ==   {}-{}\n'.format(idx1, idx2, ida, volta) 
+            out += '{} vs {}   ==   {} - {}\n'.format(idx1, idx2, ida, volta) 
             
             
             #BGR

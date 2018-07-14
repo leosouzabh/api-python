@@ -3,6 +3,7 @@
         <script src="jquery-3.3.1.min.js"></script>
         <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
         <link rel="stylesheet" type="text/css" href="custom.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             img.img-redu {
                 height:120px;
@@ -35,7 +36,7 @@
                     </nav>
                     <div class="container1">
                         <div class="row">
-                            <div class="hidden-xs col-sm-2">
+                            <div class="col-sm-2">
                                 <div class="panel-group">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
@@ -54,10 +55,10 @@
                                     </div>
                                     <div class="panel-body">
                                         <div class="row">
-                                            <div class="col-xs-4" id="texto">
+                                            <div class="col-sm-4" id="texto">
                                                 texto
                                             </div>
-                                            <div class="col-xs-8" id="conteudo">
+                                            <div class="col-sm-8" id="conteudo">
                                                 
                                             </div>
                                         </div>
@@ -97,7 +98,7 @@
                 'thr.jpg', 't_0.jpg', 't_1.jpg', 't_2.jpg', 't_3.jpg', 't_4.jpg', ];
             $("#conteudo").empty();
             $(conteudo).each(function(i,e){
-                var html = '<div class="col-xs-4 slot">'+
+                var html = '<div class="col-sm-4 col-sm-4 slot">'+
                 '    <img src="../'+data+'/'+e+'" class="img-redu img-thumbnail" />'+
                 '    <div class="leo-label">'+e+'</div>'+
                 '</div>';
