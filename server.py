@@ -37,7 +37,10 @@ class MockRest(Resource):
             
         bo = Processamento()
         base64Image = encoded_string
-        result = {"imagem": bo.processaImagem(base64Image)}
+
+        resultado, identificador = bo.processaImagem(base64Image)
+
+        result = {"resultado":resultado, "identificador":identificador}
         return jsonify(result)
 
 
