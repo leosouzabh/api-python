@@ -26,15 +26,11 @@ def extrai(path, identificador):
     color = cv2.resize(color, (0, 0), fx = 0.3, fy = 0.3)
     imgOriginal = color.copy()
     color = utils.removeSombras(color)
-
-
-    """putText(color, "0", (27,514))
-    putText(color, "1", (88, 11))
-    putText(color, "2", (47, 269))
-    putText(color, "3", (425, 32))
-    putText(color, "4", (431, 452))"""
     utils.save('semSombra.jpg', color, id=identificador)
+
+    imgOriginal, color = recuperaAreaAssinada(color.copy(), imgOriginal, identificador)
     
+    utils.save('antesGray.jpg', color, id=identificador)
     imgGray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
     utils.save('pb1.jpg', imgGray, id=identificador)
     #imgGray = rotate_bound(imgGray, 90)
@@ -42,11 +38,14 @@ def extrai(path, identificador):
 
     #imgGray = cv2.blur(imgGray, (blurI, blurI))
     #utils.save('blur.jpg', imgGray)
-
-    imgGray, contours =  extraiContornos(imgGray)
+    
+    utils.save('AntesThr.jpg', imgGray, id=identificador)
+    imgGray, contours, hierarchy =  extraiContornos(imgGray, identificador)
     utils.save('thr.jpg', imgGray, id=identificador)
     cnts2 = sorted(contours, key=functionSort, reverse=True)[0:5]
     
+        
+
     printaContornoEncontrado(imgOriginal, cnts2, identificador)
     cnts2 = sorted(cnts2, key=functionSortPrimeiroPapel)
     printaOrdem(imgOriginal, cnts2, identificador)
@@ -66,7 +65,7 @@ def extrai(path, identificador):
             utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
             #utils.save('_1_hist_{}.jpg'.format(i), roi)
 
-            roi = utils.resize(roi, width=300, height=300)
+            #roi = utils.resize(roi, width=300, height=300)
             resized = roi.copy()
             
             #resized = cv2.blur(resized, (blurI,blurI))
@@ -76,7 +75,7 @@ def extrai(path, identificador):
             #resized = cv2.blur(resized, (5,5))
             retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
             utils.save('t_{}.jpg'.format(i), resized, id=identificador)
-            resized = utils.dilatation(resized, ratio=1)
+            resized = utils.dilatation(resized)
             
             utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
             im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -149,13 +148,12 @@ def percent(indice):
         return 0
 
 
-def extraiContornos(imgGray):
-    retval, imgGray = cv2.threshold(imgGray, 10, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+def extraiContornos(imgGray, identificador):
+    retval, imgGray = cv2.threshold(imgGray, 0, 220, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     imgGray = utils.dilatation(imgGray)
     im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    return imgGray, contours
-
+    return imgGray, contours,hierarchy
 
 
 def functionSort(c):
@@ -179,7 +177,43 @@ def printaContornoEncontrado(img, cnts, identificador):
         #print(cor)
         cv2.drawContours(imgContorno, [c], -1, cor, 4)
 
-    utils.save('contornado.jpg', imgContorno, id=identificador)
+
+def recuperaAreaAssinada(canny_img, imgOriginal, identificador):
+    color = canny_img.copy()
+    canny_img = cv2.cvtColor(canny_img, cv2.COLOR_BGR2GRAY)
+    
+    canny_img, contours, hierarchy =  extraiContornos(canny_img, identificador)
+    contours = sorted(contours, key=functionSort, reverse=True)[0:5]
+
+    try: hierarchy = hierarchy[0]
+    except: hierarchy = []
+
+    height, width = canny_img.shape
+    min_x, min_y = width, height
+    max_x = max_y = 0
+
+    print('h{} w{}'.format(height, width))
+
+    # computes the bounding box for the contour, and draws it on the frame,
+    for contour, hier in zip(contours, hierarchy):
+        if cv2.contourArea(contour) > 400:
+            (x,y,w,h) = cv2.boundingRect(contour)
+            min_x, max_x = min(x, min_x), max(x+w, max_x)
+            min_y, max_y = min(y, min_y), max(y+h, max_y)
+        
+    if max_x - min_x > 0 and max_y - min_y > 0:
+        cv2.rectangle(canny_img, (min_x, min_y), (max_x, max_y), (255, 0, 0), 2)
+        m = 30
+        #print('{} x={} - y{}'.format(i,x,y))
+        a = min_y-m if min_y-m > 0 else 0
+        b = max_y+m if max_y+m <= height else height
+        c = min_x-m if min_x-m > 0 else 0
+        d = max_x+m if max_x+m < width else width
+        imgGray = color[a:b, c:d]
+        imgOriginal = imgOriginal[a:b, c:d]
+
+    utils.save('contornado.jpg', imgGray, id=identificador)
+    return imgOriginal, imgGray
 
 #TODO ajustar esse metodo
 def ajustaContorno(contours2):
