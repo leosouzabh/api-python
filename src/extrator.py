@@ -121,7 +121,7 @@ def extrai(path, identificador):
             
             #BGR
             if ( idx2 == 0 ):
-                imgResultado = contorna(imgResultado, cnts2[idx2], (255,0,0))
+                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0))
 
             elif ( ida < 10 and volta < 10 ):
                 imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0))
