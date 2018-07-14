@@ -18,6 +18,9 @@
                 font-family: Courier New, Courier, monospace;
                 font-size: 11px;
             }
+            .active {
+                color:red;
+            }
         </style>
 
     </head>
@@ -27,7 +30,7 @@
                 <div class="content">
                     <nav class="navbar navbar-default square" role="navigation" id="navbar">
                         <div class="navbar-banner">
-                            <a href="#" class="navbar-brand">Brand</a>                        
+                            <a href="#" class="navbar-brand">Backend - AppSign</a>                        
                         </div>
                     </nav>
                     <div class="container1">
@@ -36,18 +39,10 @@
                                 <div class="panel-group">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
-                                            <h4 class="panel-title">Menu 1</h4>
+                                            <h4 class="panel-title">Menu</h4>
                                         </div>
                                         <ul class="nav nav-pills nav-stacked" id="menu">
                                             <li><a href="#">Menu Item 1</a></li>
-                                            <li><a href="#">Menu Item 2</a></li>
-                                            <li><a href="#">Menu Item 3</a></li>
-                                            <li><a href="#">Menu Item 1</a></li>
-                                            <li><a href="#">Menu Item 2</a></li>
-                                            <li><a href="#">Menu Item 3</a></li>
-                                            <li><a href="#">Menu Item 1</a></li>
-                                            <li><a href="#">Menu Item 2</a></li>
-                                            <li><a href="#">Menu Item 3</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -55,7 +50,7 @@
                             <div class="col-xs-12 col-sm-10">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        <h3 class="panel-title">Conteudo</h3>
+                                        <h3 class="panel-title">Conteudo <b id="data">DATA</b></h3>
                                     </div>
                                     <div class="panel-body">
                                         <div class="row">
@@ -81,12 +76,14 @@
         $.get( "../../", function( data ) {
             $("#menu").empty();
             $(data).each(function(i,e){
-                $("#menu").append("<li><a href='#' onclick='load(\""+e+"\")'>"+e+"</a></li>");
+                $("#menu").append("<li><a href='#' id='"+e.cod+"' class='link' onclick='load(\""+e.cod+"\", \""+e.desc+"\")'>"+e.desc+"</a></li>");
             })
         });
 
-        function load(data){
+        function load(data, desc){
 
+            $("a").removeClass('active');
+            $("#"+data).addClass('active');
             
             $.get( "../"+data+"/calc.txt", function( data ) {
                 data = data.replace(/(?:\r\n|\r|\n)/g, '<br/>');
@@ -100,7 +97,7 @@
                 'thr.jpg', 't_0.jpg', 't_1.jpg', 't_2.jpg', 't_3.jpg', 't_4.jpg', ];
             $("#conteudo").empty();
             $(conteudo).each(function(i,e){
-                var html = '<div class="col-xs-6 slot">'+
+                var html = '<div class="col-xs-4 slot">'+
                 '    <img src="../'+data+'/'+e+'" class="img-redu img-thumbnail" />'+
                 '    <div class="leo-label">'+e+'</div>'+
                 '</div>';

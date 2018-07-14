@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from json import dumps
 from src.processamento import Processamento
 from os import listdir
+from datetime import datetime
 import os
 import cv2
 import src.utils as utils
@@ -25,7 +26,24 @@ class ProcessamentoRest(Resource):
 class IndexRest(Resource):
     def get(self):
         dirname = utils.buildPathRoot()
-        return listdir(dirname)
+        dirs = listdir(dirname)
+
+        result = list()
+        dirs = sorted(dirs, reverse=True)
+        
+        for dir in dirs:
+            if (dir != 'back'):
+                result.append({
+                    'cod':dir,
+                    'desc':self.parse(dir)
+                })
+
+        return jsonify(result)
+
+    def parse(self, path):
+        datetime_object = datetime.strptime(path, '%Y%m%d_%H%M%S-%f')
+        return datetime_object.strftime('%d/%m %H:%M')
+        
 
 class MockRest(Resource):
     def get(self):
