@@ -7,11 +7,32 @@ import src.utils as utils
 import src.names as names
 
 blurI = 5
+
+def putText(img, text, point):
+    font                   = cv2.FONT_HERSHEY_SIMPLEX
+    bottomLeftCornerOfText = point
+    fontScale              = 1
+    fontColor              = 255
+    lineType               = 2
+
+    cv2.putText(img,text, 
+        bottomLeftCornerOfText, 
+        font, 
+        fontScale,
+        fontColor,
+        lineType)
 def extrai(path, identificador):
     color = cv2.imread(path, -1)
     color = cv2.resize(color, (0, 0), fx = 0.3, fy = 0.3)
     imgOriginal = color.copy()
     color = utils.removeSombras(color)
+
+
+    """putText(color, "0", (27,514))
+    putText(color, "1", (88, 11))
+    putText(color, "2", (47, 269))
+    putText(color, "3", (425, 32))
+    putText(color, "4", (431, 452))"""
     utils.save('semSombra.jpg', color, id=identificador)
     
     imgGray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
@@ -27,6 +48,8 @@ def extrai(path, identificador):
     cnts2 = sorted(contours, key=functionSort, reverse=True)[0:5]
     
     printaContornoEncontrado(imgOriginal, cnts2, identificador)
+    cnts2 = sorted(cnts2, key=functionSortPrimeiroPapel)
+    printaOrdem(imgOriginal, cnts2, identificador)
 
     originalEmGray = cv2.cvtColor(imgOriginal, cv2.COLOR_BGR2GRAY)
     #originalHisto = cv2.equalizeHist(originalEmGray)
@@ -38,12 +61,13 @@ def extrai(path, identificador):
         if cv2.contourArea(c) > 100:
             x, y, w, h = cv2.boundingRect(c)
             b = 10
+            #print('{} x={} - y{}'.format(i,x,y))
             roi = imgOriginal[y-b:y + h+b, x-b:x + w+b]
             utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
             #utils.save('_1_hist_{}.jpg'.format(i), roi)
 
-            #resized = utils.resize(roi, w, interpolation = cv2.INTER_AREA)
-            resized = roi
+            roi = utils.resize(roi, width=300, height=300)
+            resized = roi.copy()
             
             #resized = cv2.blur(resized, (blurI,blurI))
             #utils.save('__{}_blur1.jpg'.format(i), resized)
@@ -52,7 +76,7 @@ def extrai(path, identificador):
             #resized = cv2.blur(resized, (5,5))
             retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
             utils.save('t_{}.jpg'.format(i), resized, id=identificador)
-            resized = utils.dilatation(resized, ratio=1.0)
+            resized = utils.dilatation(resized, ratio=1)
             
             utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
             im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -75,36 +99,38 @@ def extrai(path, identificador):
     hd = cv2.createHausdorffDistanceExtractor()
     sd = cv2.createShapeContextDistanceExtractor()
 
-
-    
     out = ""
+    resultadoApi = True
     imgResultado = imgOriginal.copy()
-    for idx1 in range(0,5):
+    for idx1 in range(0,1):
         item1 = lista[idx1]
         soma = 0
         for idx2 in range(0,5):
             item2 = lista[idx2]
             #match = dist.euclidean(item1, item2)
             #match = hd.computeDistance(item1, item2)
-            match = sd.computeDistance(item1, item2)
-            soma += match
             #match = cv2.matchShapes(cntArr[idx1], cntArr[idx2], 1, 0.0)
-            #match = round(match, 4)
-            out += '{} vs {}   ==   {}\n'.format(idx1, idx2, match) 
             
+            ida = sd.computeDistance(item1, item2)
+            volta = sd.computeDistance(item2, item1)
+            #soma += match
+            
+            ida = round(ida, 5)
+            volta = round(volta, 5)
+            out += '{} vs {}   ==   {}-{}\n'.format(idx1, idx2, ida, volta) 
+            
+            
+            #BGR
+            if ( idx2 == 0 ):
+                imgResultado = contorna(imgResultado, cnts2[idx2], (255,0,0))
 
-            
-            if ( soma < 9 ):
-                imgResultado = contorna(imgResultado, cnts2[idx1], (0,255,0))
-            elif (soma >= 9 and soma < 20):
-                imgResultado = contorna(imgResultado, cnts2[idx1], (0,165,255))
+            elif ( ida < 10 and volta < 10 ):
+                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0))
+            #elif (soma >= 9 and soma < 20):
+            #    imgResultado = contorna(imgResultado, cnts2[idx1], (0,165,255))
             else:
-                imgResultado = contorna(imgResultado, cnts2[idx1], (0,0,255))
-                
-
-
-        out += 'Soma: ' + str(soma) + '\n'
-        out += '\n'
+                imgResultado = contorna(imgResultado, cnts2[idx2], (0,0,255))
+                resultadoApi = False
 
         pathTxt = utils.buildPath(identificador, path="calc.txt")
         with open(pathTxt, "w") as text_file:
@@ -112,9 +138,7 @@ def extrai(path, identificador):
 
     utils.save(names.RESULTADO, imgResultado, id=identificador)
     
-
-    #print(len(lista))
-    return lista
+    return resultadoApi
 
 
 def percent(indice):
@@ -138,6 +162,10 @@ def functionSort(c):
     x, y, w, h = cv2.boundingRect(c)
     return w * h
 
+def functionSortPrimeiroPapel(c):
+    x, y, w, h = cv2.boundingRect(c)
+    return y
+
 
 def contorna(img, contorno, cor):
     cv2.drawContours(img, [contorno], -1, cor, 4)
@@ -148,7 +176,7 @@ def printaContornoEncontrado(img, cnts, identificador):
 
     for idx1,c in enumerate(cnts):
         cor = utils.color()
-        print(cor)
+        #print(cor)
         cv2.drawContours(imgContorno, [c], -1, cor, 4)
 
     utils.save('contornado.jpg', imgContorno, id=identificador)
@@ -227,6 +255,15 @@ def rotateAndScale(img, scaleFactor = 0.5, degreesCCW = 30):
 
     rotatedImg = cv2.warpAffine(img, M, dsize=(int(newX),int(newY)))
     return rotatedImg
+
+
+def printaOrdem(img, contornos, identificador):
+    imgSource = img.copy()
+    for i, c in enumerate(contornos):
+        x, y, w, h = cv2.boundingRect(c)
+        putText(imgSource, str(i), (x,y))
+    
+    utils.save('ordem.jpg', imgSource, id=identificador)
 
 if __name__ == '__main__':
 

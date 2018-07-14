@@ -44,7 +44,10 @@ def removeSombras(img):
 
 
 def resize(image, width = None, height = None, inter = cv2.INTER_AREA):
-	dim = None
+	
+    return cv2.resize(image,(width, height), interpolation = cv2.INTER_CUBIC)
+    """
+    dim = None
 	(h, w) = image.shape[:2]
 
 	if width is None and height is None:
@@ -59,7 +62,7 @@ def resize(image, width = None, height = None, inter = cv2.INTER_AREA):
 		dim = (width, int(h * r))
 
 	return cv2.resize(image, dim, interpolation = inter)
-
+    """
 def show(mat):
     show("window", mat)
 

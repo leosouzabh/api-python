@@ -19,8 +19,8 @@ class Regras():
     def iniciaProcessamento(self, identificador):
         path = utils.buildPath(identificador, names.ORIGINAL)
         print('Processando : ' + path) 
-        extrator.extrai(path, identificador)
+        return extrator.extrai(path, identificador)
 
 
     def identificador(self):
-        return datetime.datetime.today().strftime('%Y%m%d_%H%M%S')
+        return datetime.datetime.today().strftime('%Y%m%d_%H%M%S-%f')

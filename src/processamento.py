@@ -10,5 +10,5 @@ class Processamento():
         print('Escrevendo Imagem')
         bo.escreveImagem(imagemBase64, identificador)
         
-        bo.iniciaProcessamento(identificador)
-        return "imagemBase64"
+        return bo.iniciaProcessamento(identificador)
+        

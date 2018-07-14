@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, request
 from flask_restful import Resource, Api
 from json import dumps
 from src.processamento import Processamento
@@ -6,6 +6,7 @@ from os import listdir
 import os
 import cv2
 import src.utils as utils
+import base64 
 
 app = Flask(__name__, static_url_path='/static')
 api = Api(app)
@@ -26,8 +27,23 @@ class IndexRest(Resource):
         dirname = utils.buildPathRoot()
         return listdir(dirname)
 
+class MockRest(Resource):
+    def get(self):
+        encoded_string = ''
+        image = request.args.get('image')
+        image = '__inicial.jpg' if image == None else image
+        with open("C:\\dev\\git\\python\\api\\data\\"+image, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read())
+            
+        bo = Processamento()
+        base64Image = encoded_string
+        result = {"imagem": bo.processaImagem(base64Image)}
+        return jsonify(result)
+
+
 api.add_resource(ProcessamentoRest, '/processamento') 
 api.add_resource(IndexRest, '/') 
+api.add_resource(MockRest, '/mock') 
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
