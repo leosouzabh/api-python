@@ -27,7 +27,7 @@ def removeSombras(img):
     result_planes = []
     result_norm_planes = []
     for plane in rgb_planes:
-        dilated_img = cv2.dilate(plane, np.ones((10,10), np.uint8))
+        dilated_img = cv2.dilate(plane, np.ones((3,3), np.uint8))
         bg_img = cv2.medianBlur(dilated_img, 21)
         diff_img = 255 - cv2.absdiff(plane, bg_img)
 

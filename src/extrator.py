@@ -149,7 +149,7 @@ def percent(indice):
 
 
 def extraiContornos(imgGray, identificador):
-    retval, imgGray = cv2.threshold(imgGray, 0, 220, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    retval, imgGray = cv2.threshold(imgGray, 255, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     imgGray = utils.dilatation(imgGray)
     im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
@@ -173,9 +173,9 @@ def printaContornoEncontrado(img, cnts, identificador):
     imgContorno = img.copy()
 
     for idx1,c in enumerate(cnts):
-        cor = utils.color()
-        #print(cor)
-        cv2.drawContours(imgContorno, [c], -1, cor, 4)
+        cv2.drawContours(imgContorno, [c], -1, utils.color(), 4)
+
+    utils.save('contorno.jpg', imgContorno, id=identificador)
 
 
 def recuperaAreaAssinada(canny_img, imgOriginal, identificador):
