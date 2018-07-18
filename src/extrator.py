@@ -41,8 +41,6 @@ def extrai(path, identificador):
     utils.save('thr.jpg', imgGray, id=identificador)
     cnts2 = sorted(contours, key=functionSort, reverse=True)[0:5]
     
-        
-
     printaContornoEncontrado(imgOriginal, cnts2, identificador)
     cnts2 = sorted(cnts2, key=functionSortPrimeiroPapel)
     printaOrdem(imgOriginal, cnts2, identificador)
@@ -53,54 +51,45 @@ def extrai(path, identificador):
     lista = dict()
     cntArr = dict()
 
+
+    ratioDilatacao = recuperaRatioDilatacao(cnts2, imgOriginal, identificador)
+
     for i, c in enumerate(cnts2):
-        if cv2.contourArea(c) > 100:
-            x, y, w, h = cv2.boundingRect(c)
-            b = 10
-            #print('{} x={} - y{}'.format(i,x,y))
-            roi = imgOriginal[y-b:y + h+b, x-b:x + w+b]
-            utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
-            #utils.save('_1_hist_{}.jpg'.format(i), roi)
+        x, y, w, h = cv2.boundingRect(c)
+        b = 10
+        #print('{} x={} - y{}'.format(i,x,y))
+        roi = imgOriginal[y-b:y + h+b, x-b:x + w+b]
+        utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
+        #utils.save('_1_hist_{}.jpg'.format(i), roi)
 
-            #roi = utils.resize(roi, width=300, height=300)
-            resized = roi.copy()
-            
-            #resized = cv2.blur(resized, (blurI,blurI))
-            #utils.save('__{}_blur1.jpg'.format(i), resized)
-            resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-            
-            #resized = cv2.blur(resized, (5,5))
-            retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-            utils.save('t_{}.jpg'.format(i), resized, id=identificador)
-            
-            ratio = 0.1
-            for x in range(0, 5):
-                print(ratio)
-                resized = utils.dilatation(resized, ratio=ratio)
-            
-                utils.save('t1_{}-{}.jpg'.format(i,x), resized, id=identificador)
-                im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                contours2 = removeContornosPqnos(contours2)
-                print('Encontrados ' + str(len(contours2)))
-                if (len(contours2) == 1):
-                    cnts = contours2[0]
-                    break
-                else:
-                    ratio += 0.3
+        #roi = utils.resize(roi, width=300, height=300)
+        resized = roi.copy()
+        
+        #resized = cv2.blur(resized, (blurI,blurI))
+        #utils.save('__{}_blur1.jpg'.format(i), resized)
+        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        
+        #resized = cv2.blur(resized, (5,5))
+        retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+        utils.save('t_{}.jpg'.format(i), resized, id=identificador)
+        
+        print('ratioDilatacao ' + str(ratioDilatacao))
+        resized = utils.dilatation(resized, ratio=ratioDilatacao)
+        
+        utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
+        im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = sorted(contours2, key=functionSort, reverse=True)[0]
 
-
-                #cnts = sorted(contours2, key=functionSort, reverse=True)[0]
-
-            roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-            novaMat = np.zeros(roi.shape, dtype = "uint8")
-            cv2.drawContours(novaMat, [cnts], -1, 255, -1)
-            #novaMat = cv2.resize(novaMat, (200,200), interpolation = cv2.INTER_AREA)
-            
-            #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
-            lista[i] = cnts
-            cntArr[i] = cnts
-            utils.save('_img_{}.jpg'.format(i), novaMat, id=identificador)
-            
+        roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        novaMat = np.zeros(roi.shape, dtype = "uint8")
+        cv2.drawContours(novaMat, [cnts], -1, 255, -1)
+        #novaMat = cv2.resize(novaMat, (200,200), interpolation = cv2.INTER_AREA)
+        
+        #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
+        lista[i] = cnts
+        cntArr[i] = cnts
+        utils.save('_img_{}.jpg'.format(i), novaMat, id=identificador)
+        
 
     #utils.show(color)
 
@@ -108,13 +97,21 @@ def extrai(path, identificador):
     sd = cv2.createShapeContextDistanceExtractor()
 
     out = ""
+    sizeOut = ""
     resultadoApi = True
     imgResultado = imgOriginal.copy()
-    for idx1 in range(0,1):
+    for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
         item1 = lista[idx1]
+        altura1, largura1 = calculaAlturaLargura(item1)
         soma = 0
         for idx2 in range(0,5):
             item2 = lista[idx2]
+            altura2, largura2 = calculaAlturaLargura(item2)
+            sizeOut += 'Altura {} - {} = {} / {}\n'.format(altura1, altura2, abs(altura1 - altura2), calcPercentual(largura1, largura2))
+            sizeOut += 'Largura {} - {} = {} / {}\n'.format(largura1, largura2, abs(largura1 - largura2), calcPercentual(largura1, largura2))
+
+            tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2)
+
             #match = hd.computeDistance(item1, item2)
             #match = cv2.matchShapes(cntArr[idx1], cntArr[idx2], 1, 0.0)
             
@@ -126,29 +123,82 @@ def extrai(path, identificador):
             
             ida = round(ida, 5)
             volta = round(volta, 5)
-            out += '{} vs {}   ==   {} - {}\n'.format(idx1, idx2, ida, volta) 
-            
-            
+            out += '{} vs {} ({})  ==   {} - {}\n'.format(idx1, idx2, tamanhoCompativel, ida, volta) 
+        
+        
             #BGR
             if ( idx2 == 0 ):
-                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0))
-
-            elif ( ida < 10 and volta < 10 ):
-                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0))
-            #elif (soma >= 9 and soma < 20):
-            #    imgResultado = contorna(imgResultado, cnts2[idx1], (0,165,255))
+                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0)) #sucesso
+            elif ( ida < 10 and volta < 10 and tamanhoCompativel == True):
+                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0)) #sucesso
             else:
-                imgResultado = contorna(imgResultado, cnts2[idx2], (0,0,255))
+                imgResultado = contorna(imgResultado, cnts2[idx2], (0,0,255))  #falha
                 resultadoApi = False
+        
+        
 
         pathTxt = utils.buildPath(identificador, path="calc.txt")
         with open(pathTxt, "w") as text_file:
+            text_file.write(sizeOut)
+            text_file.write('\n')
             text_file.write(out)
 
     utils.save(names.RESULTADO, imgResultado, id=identificador)
     
     return resultadoApi
 
+def alturaLarguraCompativel(altura1, largura1, altura2, largura2):
+    tolerancia = 20
+    if ( calcPercentual(largura1, largura2) <= tolerancia and calcPercentual(altura1, altura2) <= tolerancia):
+        return True
+    else:
+        return False
+    
+
+def calcPercentual(a, b):
+    dif  = abs(a - b)
+    percent = dif  * 100 /a
+    return percent
+
+def calculaAlturaLargura(contorno):
+    x, y, w, h = cv2.boundingRect(contorno)
+    return h,w
+
+def recuperaRatioDilatacao(contornos, imgOriginal, identificador):
+    ratio = 0.1
+    for i, c in enumerate(contornos):
+        x, y, w, h = cv2.boundingRect(c)
+        b = 10
+        roi = imgOriginal[y-b:y + h+b, x-b:x + w+b]
+        resized = roi.copy()
+        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+        
+        utils.save('D{}.jpg'.format(i), roi, id=identificador)
+        
+        preResized = resized.copy()
+
+        print('IMAGEM: ' + str(i))
+        print('=======================')
+        for x in range(0, 7):
+            print('Processando Ratio: ' + str(ratio))
+            resized = utils.dilatation(preResized, ratio=ratio)
+        
+            utils.save('ratio{}_{}.jpg'.format(i,x), resized, id=identificador)
+            im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            contours2 = removeContornosPqnos(contours2)
+
+
+
+            if (len(contours2) == 1):
+                break
+            else:
+                ratio += 0.3
+        print()
+    
+    print('Ratio encontrado: ' + str(ratio))
+    return ratio
 
 def percent(indice):
     tolerancia = 0.01
@@ -355,11 +405,13 @@ def printaOrdem(img, contornos, identificador):
 
 def removeContornosPqnos(cnts):
     retorno = []
+    totalRemovidos = 0
     for i,c in enumerate(cnts):
-        print('leo')
         if cv2.contourArea(c) > 200:
-            print('Removido')
             retorno.append(c)
+            totalRemovidos+=1
+
+    print('Total removidos: ' + str(totalRemovidos))
     return retorno
 
 if __name__ == '__main__':
