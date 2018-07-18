@@ -5,7 +5,7 @@ import os
 
 indice = '1'
 
-def dilatation(src, ratio=0.75):
+def dilatation(src, ratio=0.4):
     dilatation_size = int(12 * ratio)
     #dilatation_type = cv2.MORPH_RECT
     #dilatation_type = cv2.MORPH_CROSS

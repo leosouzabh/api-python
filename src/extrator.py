@@ -15,12 +15,9 @@ def putText(img, text, point):
     fontColor              = 255
     lineType               = 2
 
-    cv2.putText(img,text, 
-        bottomLeftCornerOfText, 
-        font, 
-        fontScale,
-        fontColor,
-        lineType)
+    cv2.putText(img,text, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+
+
 def extrai(path, identificador):
     color = cv2.imread(path, -1)
     color = cv2.resize(color, (0, 0), fx = 0.3, fy = 0.3)
@@ -28,7 +25,7 @@ def extrai(path, identificador):
     color = utils.removeSombras(color)
     utils.save('semSombra.jpg', color, id=identificador)
 
-    imgOriginal, color = recuperaAreaAssinada(color.copy(), imgOriginal, identificador)
+    #imgOriginal, color = recuperaAreaAssinada(color.copy(), imgOriginal, identificador)
     
     utils.save('antesGray.jpg', color, id=identificador)
     imgGray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
@@ -75,13 +72,25 @@ def extrai(path, identificador):
             #resized = cv2.blur(resized, (5,5))
             retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
             utils.save('t_{}.jpg'.format(i), resized, id=identificador)
-            resized = utils.dilatation(resized)
             
-            utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
-            im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            ratio = 0.1
+            for x in range(0, 5):
+                print(ratio)
+                resized = utils.dilatation(resized, ratio=ratio)
+            
+                utils.save('t1_{}-{}.jpg'.format(i,x), resized, id=identificador)
+                im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contours2 = removeContornosPqnos(contours2)
+                print('Encontrados ' + str(len(contours2)))
+                if (len(contours2) == 1):
+                    cnts = contours2[0]
+                    break
+                else:
+                    ratio += 0.3
 
-            cnts = sorted(contours2, key=functionSort, reverse=True)[0]
- 
+
+                #cnts = sorted(contours2, key=functionSort, reverse=True)[0]
+
             roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
             novaMat = np.zeros(roi.shape, dtype = "uint8")
             cv2.drawContours(novaMat, [cnts], -1, 255, -1)
@@ -106,13 +115,14 @@ def extrai(path, identificador):
         soma = 0
         for idx2 in range(0,5):
             item2 = lista[idx2]
-            #match = dist.euclidean(item1, item2)
             #match = hd.computeDistance(item1, item2)
             #match = cv2.matchShapes(cntArr[idx1], cntArr[idx2], 1, 0.0)
             
             ida = sd.computeDistance(item1, item2)
             volta = sd.computeDistance(item2, item1)
-            #soma += match
+
+            #ida = dist.euclidean(item1, item2)
+            #volta = dist.euclidean(item2, item1)
             
             ida = round(ida, 5)
             volta = round(volta, 5)
@@ -149,11 +159,44 @@ def percent(indice):
 
 
 def extraiContornos(imgGray, identificador):
-    retval, imgGray = cv2.threshold(imgGray, 255, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-    imgGray = utils.dilatation(imgGray)
+    utils.save('antesTh.jpg', imgGray, id=identificador)
+    retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    utils.save('postTh.jpg', imgGray, id=identificador)
+    imgGray = utils.dilatation(imgGray, ratio=1)
     im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-    return imgGray, contours,hierarchy
+    return imgGray, contours, hierarchy
+    """
+    LENGTH = len(contours)
+    print(LENGTH)
+    status = np.zeros((LENGTH,1))
+    print('comeco long loop ')
+    for i,cnt1 in enumerate(contours):
+        x = i    
+        if i != LENGTH-1:
+            for j,cnt2 in enumerate(contours[i+1:]):
+                x = x+1
+                dist = find_if_close(cnt1,cnt2)
+                if dist == True:
+                    val = min(status[i],status[x])
+                    status[x] = status[i] = val
+                else:
+                    if status[x]==status[i]:
+                        status[x] = i+1
+
+    print('long loop 1')
+    unified = []
+    maximum = int(status.max())+1
+    for i in range(maximum):
+        pos = np.where(status==i)[0]
+        if pos.size != 0:
+            cont = np.vstack(contours[i] for i in pos)
+            hull = cv2.convexHull(cont)
+            unified.append(hull)
+
+    print('long loop 2')
+
+    return imgGray, unified, hierarchy
+    """
 
 
 def functionSort(c):
@@ -176,6 +219,17 @@ def printaContornoEncontrado(img, cnts, identificador):
         cv2.drawContours(imgContorno, [c], -1, utils.color(), 4)
 
     utils.save('contorno.jpg', imgContorno, id=identificador)
+
+
+def find_if_close(cnt1,cnt2):
+    row1,row2 = cnt1.shape[0],cnt2.shape[0]
+    for i in range(row1):
+        for j in range(row2):
+            dist = np.linalg.norm(cnt1[i]-cnt2[j])
+            if abs(dist) < 50 :
+                return True
+            elif i==row1-1 and j==row2-1:
+                return False
 
 
 def recuperaAreaAssinada(canny_img, imgOriginal, identificador):
@@ -298,6 +352,15 @@ def printaOrdem(img, contornos, identificador):
         putText(imgSource, str(i), (x,y))
     
     utils.save('ordem.jpg', imgSource, id=identificador)
+
+def removeContornosPqnos(cnts):
+    retorno = []
+    for i,c in enumerate(cnts):
+        print('leo')
+        if cv2.contourArea(c) > 200:
+            print('Removido')
+            retorno.append(c)
+    return retorno
 
 if __name__ == '__main__':
 
