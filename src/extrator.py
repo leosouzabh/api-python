@@ -26,9 +26,10 @@ def extrai(path, identificador):
     utils.save('semSombra.jpg', color, id=identificador)
 
     #imgOriginal, color = recuperaAreaAssinada(color.copy(), imgOriginal, identificador)
-    
-    utils.save('antesGray.jpg', color, id=identificador)
+    #utils.save('antesGray.jpg', color, id=identificador)
+
     imgGray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
+    imgPbOriginal = imgGray.copy()
     utils.save('pb1.jpg', imgGray, id=identificador)
     #imgGray = rotate_bound(imgGray, 90)
     #utils.save('pb2.jpg', imgGray)
@@ -52,13 +53,13 @@ def extrai(path, identificador):
     cntArr = dict()
 
 
-    ratioDilatacao = recuperaRatioDilatacao(cnts2, imgOriginal, identificador)
+    ratioDilatacao = recuperaRatioDilatacao(cnts2, imgPbOriginal, identificador)
 
     for i, c in enumerate(cnts2):
         x, y, w, h = cv2.boundingRect(c)
         b = 10
         #print('{} x={} - y{}'.format(i,x,y))
-        roi = imgOriginal[y-b:y + h+b, x-b:x + w+b]
+        roi = imgPbOriginal[y-b:y + h+b, x-b:x + w+b]
         utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
         #utils.save('_1_hist_{}.jpg'.format(i), roi)
 
@@ -67,7 +68,8 @@ def extrai(path, identificador):
         
         #resized = cv2.blur(resized, (blurI,blurI))
         #utils.save('__{}_blur1.jpg'.format(i), resized)
-        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        
+        #resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
         
         #resized = cv2.blur(resized, (5,5))
         retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
@@ -80,7 +82,7 @@ def extrai(path, identificador):
         im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnts = sorted(contours2, key=functionSort, reverse=True)[0]
 
-        roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        #roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         novaMat = np.zeros(roi.shape, dtype = "uint8")
         cv2.drawContours(novaMat, [cnts], -1, 255, -1)
         #novaMat = cv2.resize(novaMat, (200,200), interpolation = cv2.INTER_AREA)
@@ -107,8 +109,9 @@ def extrai(path, identificador):
         for idx2 in range(0,5):
             item2 = lista[idx2]
             altura2, largura2 = calculaAlturaLargura(item2)
-            sizeOut += 'Altura {} - {} = {} / {}\n'.format(altura1, altura2, abs(altura1 - altura2), calcPercentual(largura1, largura2))
-            sizeOut += 'Largura {} - {} = {} / {}\n'.format(largura1, largura2, abs(largura1 - largura2), calcPercentual(largura1, largura2))
+            #sizeOut += 'Altura {} - {} = {} / {}\n'.format(altura1, altura2, abs(altura1 - altura2), calcPercentual(largura1, largura2))
+            #sizeOut += 'Largura {} - {} = {} / {}\n'.format(largura1, largura2, abs(largura1 - largura2), calcPercentual(largura1, largura2))
+            sizeOut += 'Dimensao {} x {} \n'.format(largura2, altura2)
 
             tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2)
 
@@ -148,7 +151,7 @@ def extrai(path, identificador):
     return resultadoApi
 
 def alturaLarguraCompativel(altura1, largura1, altura2, largura2):
-    tolerancia = 20
+    tolerancia = 100
     if ( calcPercentual(largura1, largura2) <= tolerancia and calcPercentual(altura1, altura2) <= tolerancia):
         return True
     else:
@@ -171,7 +174,7 @@ def recuperaRatioDilatacao(contornos, imgOriginal, identificador):
         b = 10
         roi = imgOriginal[y-b:y + h+b, x-b:x + w+b]
         resized = roi.copy()
-        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        #resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
         retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
         
         utils.save('D{}.jpg'.format(i), roi, id=identificador)
@@ -212,10 +215,14 @@ def extraiContornos(imgGray, identificador):
     utils.save('antesTh.jpg', imgGray, id=identificador)
     retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     utils.save('postTh.jpg', imgGray, id=identificador)
-    imgGray = utils.dilatation(imgGray, ratio=1)
+
+    imgGray = aumentaCanvas(imgGray, identificador)
+
+    imgGray = utils.dilatation(imgGray, ratio=3)
     im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return imgGray, contours, hierarchy
-    """
+
+    """  verifica se existe contornos proximos... codigo mto lento e incompleto de funcionalidade
     LENGTH = len(contours)
     print(LENGTH)
     status = np.zeros((LENGTH,1))
@@ -413,6 +420,21 @@ def removeContornosPqnos(cnts):
 
     print('Total removidos: ' + str(totalRemovidos))
     return retorno
+
+def aumentaCanvas(img, identificador):
+    shape = tuple([500+x for x in img.shape])
+    novaMat = np.zeros(shape, dtype = "uint8")
+
+    im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    for i2, c2 in enumerate(contours):
+        #c2 = c2 + [300,300]
+        cv2.drawContours(novaMat, [c2], -1, 255, -1)
+
+    utils.save('redimensionada.jpg', novaMat, id=identificador)
+    return novaMat
+    
+
 
 if __name__ == '__main__':
 
