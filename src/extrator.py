@@ -5,6 +5,7 @@ import mahotas
 from scipy.spatial import distance as dist
 import src.utils as utils
 import src.names as names
+from src.AppException import AppException
 
 blurI = 5
 
@@ -53,12 +54,13 @@ def extrai(path, identificador):
     cntArr = dict()
 
 
-    ratioDilatacao = recuperaRatioDilatacao(cnts2, imgPbOriginal, identificador)
+    #ratioDilatacao = recuperaRatioDilatacao(cnts2, imgPbOriginal, identificador)
 
     for i, c in enumerate(cnts2):
         x, y, w, h = cv2.boundingRect(c)
-        b = 10
+        b = 0
         #print('{} x={} - y{}'.format(i,x,y))
+        utils.save('imgPbSemSombra2-{}.jpg'.format(i), imgPbOriginal, id=identificador)
         roi = imgPbOriginal[y-b:y + h+b, x-b:x + w+b]
         utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
         #utils.save('_1_hist_{}.jpg'.format(i), roi)
@@ -73,13 +75,21 @@ def extrai(path, identificador):
         
         #resized = cv2.blur(resized, (5,5))
         retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+        resized = removeContornosPqnosImg(resized)
+
         utils.save('t_{}.jpg'.format(i), resized, id=identificador)
-        
-        print('ratioDilatacao ' + str(ratioDilatacao))
-        resized = utils.dilatation(resized, ratio=ratioDilatacao)
+        cv2.waitKey(0) 
+        #print('ratioDilatacao ' + str(ratioDilatacao))
+        resized = utils.dilatation(resized, ratio=0.3)
         
         utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
         im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        print('Ajustando espacos')
+        contours2, resized = ajustaEspacosContorno(contours2, resized)
+        print('espacos ajustados')
+
+
         cnts = sorted(contours2, key=functionSort, reverse=True)[0]
 
         #roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -215,46 +225,35 @@ def extraiContornos(imgGray, identificador):
     utils.save('antesTh.jpg', imgGray, id=identificador)
     retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     utils.save('postTh.jpg', imgGray, id=identificador)
+    
+    imgGray = removeContornosPqnosImg(imgGray)
+    utils.save('novosContornos.jpg', imgGray, id=identificador)
 
-    imgGray = aumentaCanvas(imgGray, identificador)
-
+    #imgGray = aumentaCanvas(imgGray, identificador)
+    
     imgGray = utils.dilatation(imgGray, ratio=3)
     im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return imgGray, contours, hierarchy
 
-    """  verifica se existe contornos proximos... codigo mto lento e incompleto de funcionalidade
-    LENGTH = len(contours)
-    print(LENGTH)
-    status = np.zeros((LENGTH,1))
-    print('comeco long loop ')
-    for i,cnt1 in enumerate(contours):
-        x = i    
-        if i != LENGTH-1:
-            for j,cnt2 in enumerate(contours[i+1:]):
-                x = x+1
-                dist = find_if_close(cnt1,cnt2)
-                if dist == True:
-                    val = min(status[i],status[x])
-                    status[x] = status[i] = val
-                else:
-                    if status[x]==status[i]:
-                        status[x] = i+1
+def removeContornosPqnosImg(img):
+    novaImg = np.zeros(img.shape, dtype = "uint8")
+    
+    im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    print(len(contours))
+    for i,c in enumerate(contours):
+        tamanhoContorno = cv2.contourArea(c)
+        print('Contorno encontrado tamanho ' + str(tamanhoContorno))
+        if tamanhoContorno > 100:
+            cv2.drawContours(novaImg, [c], -1, 255, -1)
 
-    print('long loop 1')
-    unified = []
-    maximum = int(status.max())+1
-    for i in range(maximum):
-        pos = np.where(status==i)[0]
-        if pos.size != 0:
-            cont = np.vstack(contours[i] for i in pos)
-            hull = cv2.convexHull(cont)
-            unified.append(hull)
+    novaImg = cv2.blur(novaImg, (5,5))
+    novaImg = utils.dilatation(novaImg, ratio=0.1)
+    
+    im2, contours, hierarchy = cv2.findContours(novaImg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    novaImg = np.zeros(img.shape, dtype = "uint8")
+    cv2.drawContours(novaImg, contours, -1, 255, -1)
 
-    print('long loop 2')
-
-    return imgGray, unified, hierarchy
-    """
-
+    return novaImg
 
 def functionSort(c):
     x, y, w, h = cv2.boundingRect(c)
@@ -263,6 +262,12 @@ def functionSort(c):
 def functionSortPrimeiroPapel(c):
     x, y, w, h = cv2.boundingRect(c)
     return y
+
+def functionSortPrimeiroEsquerdaParaDireita(c):
+    x, y, w, h = cv2.boundingRect(c)
+    return x
+
+
 
 
 def contorna(img, contorno, cor):
@@ -276,6 +281,43 @@ def printaContornoEncontrado(img, cnts, identificador):
         cv2.drawContours(imgContorno, [c], -1, utils.color(), 4)
 
     utils.save('contorno.jpg', imgContorno, id=identificador)
+
+
+def recuperaIdxContornoMaisADireita(contours):
+    minX = 999999
+    minIdx = 99999
+    for idx1, c in enumerate(contours):
+        x, y, w, h = cv2.boundingRect(c)        
+        if (x < minX):
+            minX = x
+            minIdx = idx1
+    print(minX, minIdx)
+    return minIdx
+
+def ajustaEspacosContorno(contours, img):
+    print("Contornos encontrados " + str(len(contours)))
+    if (len(contours) == 1):
+        print('Retornou contorno 1')
+        return contours, img
+    else:
+        novaMat = np.zeros(img.shape, dtype = "uint8")
+        contours = sorted(contours, key=functionSortPrimeiroEsquerdaParaDireita)
+        
+        for i, c in enumerate(contours):
+            x, y, w, h = cv2.boundingRect(c)        
+            print(x)
+            if (x == 0):
+                raise AppException("My hovercraft is full of eels")
+            if (i == 1):
+                c = c - [10,0]
+            cv2.drawContours(novaMat, [c], -1, 255, -1)
+
+        cv2.imshow('img', novaMat)
+        cv2.waitKey(0)
+
+        im2, contours, hierarchy = cv2.findContours(novaMat, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        return ajustaEspacosContorno(contours, img)
+        
 
 
 def find_if_close(cnt1,cnt2):
