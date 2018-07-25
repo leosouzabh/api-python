@@ -91,7 +91,7 @@ def removeContornosPqnosImg(img):
     for i,c in enumerate(contours):
         tamanhoContorno = cv2.contourArea(c)
         #print('Contorno encontrado tamanho ' + str(tamanhoContorno))
-        if tamanhoContorno > 50:
+        if tamanhoContorno > 100:
             cv2.drawContours(novaImg, [c], -1, 255, -1)
 
     novaImg = cv2.blur(novaImg, (5,5))
