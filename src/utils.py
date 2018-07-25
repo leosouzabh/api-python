@@ -83,3 +83,23 @@ def buildPathRoot():
     filename = os.path.join(dirname, '../static/')
     return filename
 
+def removeContornosPqnosImg(img):
+    novaImg = np.zeros(img.shape, dtype = "uint8")
+    
+    im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    print(len(contours))
+    for i,c in enumerate(contours):
+        tamanhoContorno = cv2.contourArea(c)
+        #print('Contorno encontrado tamanho ' + str(tamanhoContorno))
+        if tamanhoContorno > 50:
+            cv2.drawContours(novaImg, [c], -1, 255, -1)
+
+    novaImg = cv2.blur(novaImg, (5,5))
+    novaImg = dilatation(novaImg, ratio=0.1)
+    
+    im2, contours, hierarchy = cv2.findContours(novaImg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    novaImg = np.zeros(img.shape, dtype = "uint8")
+    cv2.drawContours(novaImg, contours, -1, 255, -1)
+
+    return novaImg
+

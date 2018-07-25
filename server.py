@@ -8,7 +8,7 @@ import os
 import cv2
 import src.utils as utils
 import base64 
-from src.AppException import AppException
+from src.AppException import AppException, QtdeAssinaturasException
 
 app = Flask(__name__, static_url_path='/static')
 api = Api(app)
@@ -20,8 +20,12 @@ class ProcessamentoRest(Resource):
             base64Image = request.json['image']
             result = {"imagem": bo.processaImagem(base64Image)}
             return jsonify(result)
+        
         except AppException as error:
-            print(error)
+            result = {"erro": True, "message": str(error)}
+            return jsonify(result)
+        
+        except QtdeAssinaturasException as error:
             result = {"erro": True, "message": str(error)}
             return jsonify(result)
 
@@ -68,6 +72,10 @@ class MockRest(Resource):
             return jsonify(result)
 
         except AppException as error:
+            result = {"erro": True, "message": str(error)}
+            return jsonify(result)
+
+        except QtdeAssinaturasException as error:
             result = {"erro": True, "message": str(error)}
             return jsonify(result)
 

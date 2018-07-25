@@ -5,10 +5,10 @@ import mahotas
 from scipy.spatial import distance as dist
 import src.utils as utils
 import src.names as names
-from src.AppException import AppException
+from src.AppException import AppException, QtdeAssinaturasException
 
 blurI = 5
-
+larguraImg = 0
 def putText(img, text, point):
     font                   = cv2.FONT_HERSHEY_SIMPLEX
     bottomLeftCornerOfText = point
@@ -26,45 +26,49 @@ def extrai(path, identificador):
     color = utils.removeSombras(color)
     utils.save('semSombra.jpg', color, id=identificador)
 
-    #imgOriginal, color = recuperaAreaAssinada(color.copy(), imgOriginal, identificador)
-    #utils.save('antesGray.jpg', color, id=identificador)
-
     imgGray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
     imgPbOriginal = imgGray.copy()
     utils.save('pb1.jpg', imgGray, id=identificador)
-    #imgGray = rotate_bound(imgGray, 90)
-    #utils.save('pb2.jpg', imgGray)
-
-    #imgGray = cv2.blur(imgGray, (blurI, blurI))
-    #utils.save('blur.jpg', imgGray)
+    
     
     utils.save('AntesThr.jpg', imgGray, id=identificador)
     imgGray, contours, hierarchy =  extraiContornos(imgGray, identificador)
     utils.save('thr.jpg', imgGray, id=identificador)
-    cnts2 = sorted(contours, key=functionSort, reverse=True)[0:5]
     
-    printaContornoEncontrado(imgOriginal, cnts2, identificador)
-    cnts2 = sorted(cnts2, key=functionSortPrimeiroPapel)
-    printaOrdem(imgOriginal, cnts2, identificador)
+    
+    cnts2 = sorted(contours, key=sortAltura, reverse=True)
+    assinaturas = list()
 
-    originalEmGray = cv2.cvtColor(imgOriginal, cv2.COLOR_BGR2GRAY)
-    #originalHisto = cv2.equalizeHist(originalEmGray)
-    originalHisto = originalEmGray
+    for i,c in enumerate(cnts2):
+        
+        x, y, w, h = cv2.boundingRect(c)
+
+        existeEntre = existeEntreAlgumaFaixa(assinaturas, y, h)
+        if existeEntre == False:
+            assinaturas.append((y, y+h))
+            
+
+    imgCopy = imgOriginal.copy()
+    larguraImg = imgOriginal.shape[1]
+    for ass in assinaturas:
+        cv2.rectangle(imgCopy, (50, ass[0]), (larguraImg-50, ass[1]), (255,0,0), 2)
+    utils.save('identificadas_ass.jpg', imgCopy, id=identificador)
+
+
+    if len(assinaturas) != 5:
+        raise QtdeAssinaturasException("Numero de assinaturas encontradas ({}) é diferente do esperado (5)".format(len(assinaturas)))
+    
+
+    assinaturas = sorted(assinaturas)
+
     lista = dict()
-    cntArr = dict()
-
 
     #ratioDilatacao = recuperaRatioDilatacao(cnts2, imgPbOriginal, identificador)
 
-    for i, c in enumerate(cnts2):
-        x, y, w, h = cv2.boundingRect(c)
-        b = 0
-        #print('{} x={} - y{}'.format(i,x,y))
-        utils.save('imgPbSemSombra2-{}.jpg'.format(i), imgPbOriginal, id=identificador)
-        roi = imgPbOriginal[y-b:y + h+b, x-b:x + w+b]
+    for i, ass in enumerate(assinaturas):
+        roi = imgPbOriginal[ass[0]:ass[1], 0:larguraImg]
         utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
-        #utils.save('_1_hist_{}.jpg'.format(i), roi)
-
+        
         #roi = utils.resize(roi, width=300, height=300)
         resized = roi.copy()
         
@@ -75,7 +79,7 @@ def extrai(path, identificador):
         
         #resized = cv2.blur(resized, (5,5))
         retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-        resized = removeContornosPqnosImg(resized)
+        resized = utils.removeContornosPqnosImg(resized)
 
         utils.save('t_{}.jpg'.format(i), resized, id=identificador)
         cv2.waitKey(0) 
@@ -98,8 +102,7 @@ def extrai(path, identificador):
         #novaMat = cv2.resize(novaMat, (200,200), interpolation = cv2.INTER_AREA)
         
         #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
-        lista[i] = cnts
-        cntArr[i] = cnts
+        lista[i] = cnts, ass
         utils.save('_img_{}.jpg'.format(i), novaMat, id=identificador)
         
 
@@ -113,20 +116,18 @@ def extrai(path, identificador):
     resultadoApi = True
     imgResultado = imgOriginal.copy()
     for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
-        item1 = lista[idx1]
+        item1 = lista[idx1][0]
         altura1, largura1 = calculaAlturaLargura(item1)
         soma = 0
         for idx2 in range(0,5):
-            item2 = lista[idx2]
+            item2 = lista[idx2][0]
+            ass = lista[idx2][1]
             altura2, largura2 = calculaAlturaLargura(item2)
-            #sizeOut += 'Altura {} - {} = {} / {}\n'.format(altura1, altura2, abs(altura1 - altura2), calcPercentual(largura1, largura2))
-            #sizeOut += 'Largura {} - {} = {} / {}\n'.format(largura1, largura2, abs(largura1 - largura2), calcPercentual(largura1, largura2))
             sizeOut += 'Dimensao {} x {} \n'.format(largura2, altura2)
 
             tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2)
 
             #match = hd.computeDistance(item1, item2)
-            #match = cv2.matchShapes(cntArr[idx1], cntArr[idx2], 1, 0.0)
             
             ida = sd.computeDistance(item1, item2)
             volta = sd.computeDistance(item2, item1)
@@ -141,11 +142,11 @@ def extrai(path, identificador):
         
             #BGR
             if ( idx2 == 0 ):
-                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0)) #sucesso
+                imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
             elif ( ida < 10 and volta < 10 and tamanhoCompativel == True):
-                imgResultado = contorna(imgResultado, cnts2[idx2], (0,255,0)) #sucesso
+                imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
             else:
-                imgResultado = contorna(imgResultado, cnts2[idx2], (0,0,255))  #falha
+                imgResultado = contorna(imgResultado, larguraImg, ass, (0,0,255))  #falha
                 resultadoApi = False
         
         
@@ -226,34 +227,14 @@ def extraiContornos(imgGray, identificador):
     retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     utils.save('postTh.jpg', imgGray, id=identificador)
     
-    imgGray = removeContornosPqnosImg(imgGray)
+    imgGray = utils.removeContornosPqnosImg(imgGray)
     utils.save('novosContornos.jpg', imgGray, id=identificador)
 
     #imgGray = aumentaCanvas(imgGray, identificador)
     
-    imgGray = utils.dilatation(imgGray, ratio=3)
+    #imgGray = utils.dilatation(imgGray, ratio=1)
     im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return imgGray, contours, hierarchy
-
-def removeContornosPqnosImg(img):
-    novaImg = np.zeros(img.shape, dtype = "uint8")
-    
-    im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    print(len(contours))
-    for i,c in enumerate(contours):
-        tamanhoContorno = cv2.contourArea(c)
-        print('Contorno encontrado tamanho ' + str(tamanhoContorno))
-        if tamanhoContorno > 100:
-            cv2.drawContours(novaImg, [c], -1, 255, -1)
-
-    novaImg = cv2.blur(novaImg, (5,5))
-    novaImg = utils.dilatation(novaImg, ratio=0.1)
-    
-    im2, contours, hierarchy = cv2.findContours(novaImg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    novaImg = np.zeros(img.shape, dtype = "uint8")
-    cv2.drawContours(novaImg, contours, -1, 255, -1)
-
-    return novaImg
 
 def functionSort(c):
     x, y, w, h = cv2.boundingRect(c)
@@ -270,8 +251,10 @@ def functionSortPrimeiroEsquerdaParaDireita(c):
 
 
 
-def contorna(img, contorno, cor):
-    cv2.drawContours(img, [contorno], -1, cor, 4)
+def contorna(img, larguraImg, ass, cor):
+    #cv2.drawContours(img, [contorno], -1, cor, 4)
+    print(larguraImg)
+    cv2.rectangle(img, (20, ass[0]), (larguraImg-20, ass[1]), cor, 3)
     return img
 
 def printaContornoEncontrado(img, cnts, identificador):
@@ -312,8 +295,8 @@ def ajustaEspacosContorno(contours, img):
                 c = c - [10,0]
             cv2.drawContours(novaMat, [c], -1, 255, -1)
 
-        cv2.imshow('img', novaMat)
-        cv2.waitKey(0)
+        #cv2.imshow('img', novaMat)
+        #cv2.waitKey(0)
 
         im2, contours, hierarchy = cv2.findContours(novaMat, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         return ajustaEspacosContorno(contours, img)
@@ -476,6 +459,31 @@ def aumentaCanvas(img, identificador):
     utils.save('redimensionada.jpg', novaMat, id=identificador)
     return novaMat
     
+def existeEntreAlgumaFaixa(lista, y,h):
+    for i, ass in enumerate(lista):
+        #comeca em alguma faixa       
+        if ass[0] < y < ass[1]:
+
+            #verifica se precisa expandir o fim
+            if y+h > ass[1]: 
+                lista[i] = (ass[0], y+h)
+            return True
+
+        #termina em alguma faixa 
+        elif ass[0] < y+h < ass[1]: 
+
+            #verifica se precisa expandir o inicio
+            if y < ass[0]: 
+                lista[i] = (y, ass[1])
+            return True
+
+    return False
+
+
+def sortAltura(contorno):
+    x, y, w, h = cv2.boundingRect(contorno)
+    return h
+
 
 
 if __name__ == '__main__':
