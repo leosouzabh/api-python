@@ -67,7 +67,8 @@ def show(mat):
     show("window", mat)
 
 def show(label, mat):
-    cv2.imshow(label, resize(mat, width=700))
+    img2 = cv2.resize(mat.copy(), (0, 0), fx = 0.5, fy = 0.5)
+    cv2.imshow(label, img2)
     cv2.waitKey(0)        
 
 def color():
@@ -86,8 +87,11 @@ def buildPathRoot():
 def removeContornosPqnosImg(img):
     novaImg = np.zeros(img.shape, dtype = "uint8")
     
+    #show("window", img)
+    img = dilatation(img, ratio=0.1)
+    #show("window", img)
+
     im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    print(len(contours))
     for i,c in enumerate(contours):
         tamanhoContorno = cv2.contourArea(c)
         #print('Contorno encontrado tamanho ' + str(tamanhoContorno))
