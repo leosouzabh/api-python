@@ -140,11 +140,12 @@ def extrai(path, identificador):
             volta = round(volta, 5)
             out += '{} vs {} ({})  ==   {} - {}\n'.format(idx1, idx2, tamanhoCompativel, ida, volta) 
         
+            valorAceitavel = 20
         
             #BGR
             if ( idx2 == 0 ):
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
-            elif ( ida < 10 and volta < 10 and tamanhoCompativel == True):
+            elif ( ida < valorAceitavel and volta < valorAceitavel and tamanhoCompativel == True):
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
             else:
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,0,255))  #falha
