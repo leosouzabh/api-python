@@ -18,15 +18,17 @@ class ProcessamentoRest(Resource):
         try:
             bo = Processamento()
             base64Image = request.json['image']
-            result = {"imagem": bo.processaImagem(base64Image)}
+
+            resultado, identificador = bo.processaImagem(base64Image)
+            result = {"resultado":resultado, "erro":False, "identificador":identificador}
             return jsonify(result)
         
         except AppException as error:
             result = {"erro": True, "message": str(error)}
             return jsonify(result)
-        
+
         except QtdeAssinaturasException as error:
-            result = {"erro": True, "message": str(error)}
+            result = {"erro": True, "message": str(error), "identificador":error.identificador}
             return jsonify(result)
 
     def get(self):
@@ -68,7 +70,7 @@ class MockRest(Resource):
 
             resultado, identificador = bo.processaImagem(base64Image)
 
-            result = {"resultado":resultado, "identificador":identificador}
+            result = {"erro":False, "resultado":resultado, "identificador":identificador}
             return jsonify(result)
 
         except AppException as error:
@@ -76,7 +78,7 @@ class MockRest(Resource):
             return jsonify(result)
 
         except QtdeAssinaturasException as error:
-            result = {"erro": True, "message": str(error)}
+            result = {"erro": True, "message": str(error), "identificador":error.identificador}
             return jsonify(result)
 
 

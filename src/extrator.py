@@ -56,7 +56,8 @@ def extrai(path, identificador):
 
 
     if len(assinaturas) != 5:
-        raise QtdeAssinaturasException("Numero de assinaturas encontradas ({}) é diferente do esperado (5)".format(len(assinaturas)))
+        msgEx = "Numero de assinaturas encontradas ({}) é diferente do esperado (5)".format(len(assinaturas))
+        raise QtdeAssinaturasException(msgEx, identificador)
     
 
     assinaturas = sorted(assinaturas)
