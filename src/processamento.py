@@ -12,3 +12,13 @@ class Processamento():
         
         return bo.iniciaProcessamento(identificador), identificador
         
+    def extraiAssinatura(self, imagemBase64):
+        bo = Regras()
+        
+        print('Criando estrutura')
+        identificador = bo.criaEstrutura()
+
+        print('Escrevendo Imagem')
+        bo.escreveImagem(imagemBase64, identificador)
+        
+        return bo.iniciaExtracaoAssinatura(identificador), identificador

@@ -34,6 +34,46 @@ class ProcessamentoRest(Resource):
     def get(self):
         return "ok"
 
+
+
+class CnhValidacaoRest(Resource):
+    def post(self):
+        try:
+            bo = Processamento()
+            base64Image = request.json['image']
+
+            resultado, identificador = bo.extraiAssinatura(base64Image)
+            result = {"resultado":resultado, "erro":False, "identificador":identificador}
+            return jsonify(result)
+        
+        except AppException as error:
+            result = {"erro": True, "message": str(error)}
+            return jsonify(result)
+
+        except QtdeAssinaturasException as error:
+            result = {"erro": True, "message": str(error), "identificador":error.identificador}
+            return jsonify(result)
+
+
+class CnhExtracaoRest(Resource):
+    def post(self):
+        try:
+            bo = Processamento()
+            base64Image = request.json['image']
+
+            resultado, identificador = bo.extraiAssinatura(base64Image)
+            result = {"resultado":resultado, "erro":False, "identificador":identificador}
+            return jsonify(result)
+        
+        except AppException as error:
+            result = {"erro": True, "message": str(error)}
+            return jsonify(result)
+
+        except QtdeAssinaturasException as error:
+            result = {"erro": True, "message": str(error), "identificador":error.identificador}
+            return jsonify(result)        
+    
+
 class IndexRest(Resource):
     def get(self):
         dirname = utils.buildPathRoot()
@@ -83,6 +123,7 @@ class MockRest(Resource):
 
 
 api.add_resource(ProcessamentoRest, '/processamento') 
+api.add_resource(CnhRest, '/cnh') 
 api.add_resource(IndexRest, '/') 
 api.add_resource(MockRest, '/mock') 
 

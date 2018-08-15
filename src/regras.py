@@ -4,6 +4,7 @@ import src.utils as utils
 import src.names as names
 import base64
 import src.extrator as extrator
+import src.extratorAssinaturaCnh as extratorAssinaturaCnh
 
 class Regras():
     def criaEstrutura(self):
@@ -21,6 +22,10 @@ class Regras():
         print('Processando : ' + path) 
         return extrator.extrai(path, identificador)
 
+    def iniciaExtracaoAssinatura(self, identificador):
+        path = utils.buildPath(identificador, names.ORIGINAL)
+        print('Processando : ' + path) 
+        return extratorAssinaturaCnh.extraiAssinatura(path, identificador)
 
     def identificador(self):
         return datetime.datetime.today().strftime('%Y%m%d_%H%M%S-%f')
