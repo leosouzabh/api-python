@@ -123,7 +123,7 @@ class MockRest(Resource):
 
 
 api.add_resource(ProcessamentoRest, '/processamento') 
-api.add_resource(CnhRest, '/cnh') 
+api.add_resource(CnhValidacaoRest, '/cnh') 
 api.add_resource(IndexRest, '/') 
 api.add_resource(MockRest, '/mock') 
 

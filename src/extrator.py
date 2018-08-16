@@ -31,7 +31,6 @@ def extrai(path, identificador):
     utils.save('pb1.jpg', imgGray, id=identificador)
     
     
-    utils.save('AntesThr.jpg', imgGray, id=identificador)
     imgGray, contours, hierarchy =  extraiContornos(imgGray, identificador)
     utils.save('thr.jpg', imgGray, id=identificador)
     
@@ -45,7 +44,7 @@ def extrai(path, identificador):
 
         existeEntre = existeEntreAlgumaFaixa(assinaturas, y, h)
         if existeEntre == False:
-            assinaturas.append((y, y+h))
+            assinaturas.append((y-5, y+h+5))
             
 
     imgCopy = imgOriginal.copy()
@@ -70,6 +69,7 @@ def extrai(path, identificador):
         roi = imgPbOriginal[ass[0]:ass[1], 0:larguraImg]
         utils.save('roi_{}.jpg'.format(i), roi, id=identificador)
         
+        
         #roi = utils.resize(roi, width=300, height=300)
         resized = roi.copy()
         
@@ -83,9 +83,9 @@ def extrai(path, identificador):
         resized = utils.removeContornosPqnosImg(resized)
 
         utils.save('t_{}.jpg'.format(i), resized, id=identificador)
-        cv2.waitKey(0) 
+        #cv2.waitKey(0) 
         #print('ratioDilatacao ' + str(ratioDilatacao))
-        resized = utils.dilatation(resized, ratio=0.3)
+        #resized = utils.dilatation(resized, ratio=0.4)
         
         utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
         im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -96,14 +96,17 @@ def extrai(path, identificador):
 
 
         cnts = sorted(contours2, key=functionSort, reverse=True)[0]
+        
 
-        #roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         novaMat = np.zeros(roi.shape, dtype = "uint8")
         cv2.drawContours(novaMat, [cnts], -1, 255, -1)
-        #novaMat = cv2.resize(novaMat, (200,200), interpolation = cv2.INTER_AREA)
+
+        xA, yA, wA, hA = cv2.boundingRect(cnts)
+        square = novaMat[yA  :yA + hA, xA : xA + wA ]
+        utils.save('square_{}.jpg'.format(i), square, id=identificador)
         
         #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
-        lista[i] = cnts, ass
+        lista[i] = cnts, ass, square
         utils.save('_img_{}.jpg'.format(i), novaMat, id=identificador)
         
 
@@ -117,16 +120,23 @@ def extrai(path, identificador):
     resultadoApi = True
     imgResultado = imgOriginal.copy()
     for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
-        item1 = lista[idx1][0]
+        item1   = lista[idx1][0]
+        square1 = lista[idx1][2]
         altura1, largura1 = calculaAlturaLargura(item1)
         soma = 0
+        
         for idx2 in range(0,5):
             item2 = lista[idx2][0]
-            ass = lista[idx2][1]
+            ass   = lista[idx2][1]
+            square2 = lista[idx2][2]
             altura2, largura2 = calculaAlturaLargura(item2)
             sizeOut += 'Dimensao {} x {} \n'.format(largura2, altura2)
 
             tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2)
+
+
+
+            item2 = transformaItem(square2, altura1, largura1, identificador, idx2)
 
             #match = hd.computeDistance(item1, item2)
             
@@ -486,7 +496,17 @@ def sortAltura(contorno):
     x, y, w, h = cv2.boundingRect(contorno)
     return h
 
+def transformaItem(square2, altura1, largura1, identificador, idx2):
 
+    square2 = utils.resize(square2, width=largura1, height=altura1)
+    im2, contours2, hierarchy = cv2.findContours(square2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = sorted(contours2, key=functionSort, reverse=True)[0]
+    novaMat = np.zeros(square2.shape, dtype = "uint8")
+    cv2.drawContours(novaMat, [cnts], -1, 255, -1)
+    
+    
+    utils.save('resized_{}.jpg'.format(idx2), novaMat, id=identificador)
+    return cnts
 
 if __name__ == '__main__':
 

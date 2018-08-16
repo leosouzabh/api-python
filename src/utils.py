@@ -88,14 +88,14 @@ def removeContornosPqnosImg(img):
     novaImg = np.zeros(img.shape, dtype = "uint8")
     
     #show("window", img)
-    img = dilatation(img, ratio=0.1)
+    img = dilatation(img, ratio=0.05)
     #show("window", img)
 
     im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for i,c in enumerate(contours):
         tamanhoContorno = cv2.contourArea(c)
         #print('Contorno encontrado tamanho ' + str(tamanhoContorno))
-        if tamanhoContorno > 100:
+        if tamanhoContorno > 20:
             cv2.drawContours(novaImg, [c], -1, 255, -1)
 
     novaImg = cv2.blur(novaImg, (5,5))
