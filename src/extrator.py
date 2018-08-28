@@ -127,6 +127,10 @@ def extrai(path, pathCnh, identificador):
     resultadoApi = True
     imgResultado = imgOriginal.copy()
 
+    percentCnh = []
+
+    valorAceitavel = 5
+    valorAceitavelCnh = valorAceitavel
 
     for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
         item1   = lista[idx1][0]
@@ -142,7 +146,7 @@ def extrai(path, pathCnh, identificador):
             itemCnh = transformaItem(squareCnh, altura1, largura1, identificador, 6)
             print("Contornos img_6 = " + str(len(itemCnh)))
 
-        for idx2 in range(0,5):
+        for idx2 in range(0,1):
             print("Processando imagem " + str(idx2))
             item2 = lista[idx2][0]
             ass   = lista[idx2][1]
@@ -160,10 +164,10 @@ def extrai(path, pathCnh, identificador):
             
             if ( idx1 != idx2 ):
                 print("Ida " + str(idx2))
-                ida = 1#sd.computeDistance(item1, item2)
+                ida = round(sd.computeDistance(item1, item2), 5)
 
                 print("Volta" + str(idx2))
-                volta = 1#sd.computeDistance(item2, item1)
+                volta = round(sd.computeDistance(item2, item1), 5)
             else :
                 print("Ida " + str(idx2))
                 ida = 0
@@ -171,21 +175,23 @@ def extrai(path, pathCnh, identificador):
                 volta = 0
 
 
-            print("Ida CNH" + str(idx2))
-            idaCnh = 1#round(sd.computeDistance(item2, itemCnh),5)
+            if ( existeCnh == True ):
+                print("Ida CNH" + str(idx2))
+                idaCnh = round(sd.computeDistance(item2, itemCnh),5)
 
-            print("Volta CNH" + str(idx2))
-            voltaCnh = 1#round(sd.computeDistance(itemCnh, item2),5)
-            outCnh += '{} ==  {} - {}\n'.format(idx2, idaCnh, voltaCnh) 
+                print("Volta CNH" + str(idx2))
+                voltaCnh = round(sd.computeDistance(itemCnh, item2),5)            
+                outCnh += '{} ==  {} - {}\n'.format(idx2, idaCnh, voltaCnh) 
+                percentCnh.append( calculaSimilaridade(idaCnh, voltaCnh, valorAceitavelCnh) )
 
             #ida = dist.euclidean(item1, item2)
             #volta = dist.euclidean(item2, item1)
             
-            ida = round(ida, 5)
-            volta = round(volta, 5)
             out += '{} vs {} ({})  ==   {} - {}\n'.format(idx1, idx2, tamanhoCompativel, ida, volta) 
         
-            valorAceitavel = 5
+            
+
+            
         
             #BGR
             if ( ida < valorAceitavel and volta < valorAceitavel and tamanhoCompativel == True):
@@ -207,15 +213,16 @@ def extrai(path, pathCnh, identificador):
 
     utils.save(names.RESULTADO, imgResultado, id=identificador)
     
-    percentCnh = {
-        'ass1':20,
-        'ass2':20,
-        'ass3':20,
-        'ass4':20,
-        'ass5':20 
-    }
-
     return {'folhaAssinatura':resultadoApi, 'resultadoCnh':False, 'percentCnh':percentCnh}
+
+
+def calculaSimilaridade(idaCnh, voltaCnh, tolerancia):
+    maior = idaCnh
+    if ( voltaCnh > idaCnh ):
+        maior = voltaCnh
+
+    return 100 - (maior * 100 / tolerancia)
+
 
 def alturaLarguraCompativel(altura1, largura1, altura2, largura2):
     tolerancia = 100
