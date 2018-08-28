@@ -23,6 +23,7 @@ mccabe==0.6.1
 numba==0.38.1
 numpy==1.14.3
 opencv-python==3.4.1.15
+Pillow==5.2.0
 Polygon3==3.0.8
 pylint==1.9.1
 pyparsing==2.2.0
@@ -31,5 +32,6 @@ pytz==2018.4
 scipy==1.1.0
 six==1.11.0
 SQLAlchemy==1.2.8
+virtualenv==16.0.0
 Werkzeug==0.14.1
 wrapt==1.10.11
