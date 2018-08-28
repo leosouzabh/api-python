@@ -1,0 +1,270 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>jQuery Mobile Demos</title>
+        <link rel="shortcut icon" href="favicon.ico">
+        <link rel="stylesheet" href="css/jquery.mobile-1.4.5.min.css">
+        <script src="js/jquery.min.js"></script>
+        <script src="js/jquery.mobile-1.4.5.min.js"></script>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" >
+
+        <script src="js/cropper.min.js"></script><!-- Cropper.js is required -->
+        <link  href="css/cropper.min.css" rel="stylesheet">
+        <script src="js/jquery-cropper.min.js"></script>
+
+        <style>
+            .image{
+                width:100%
+            }
+            .image-small{
+                width:70%;
+                margin:auto;
+            }
+            .img-preview{
+                float: left;
+                margin-bottom: .5rem;
+                margin-right: .5rem;
+                overflow: hidden;
+
+                height: 9rem;
+                width: 100%;
+            }
+            .img-carregada{
+                color:green;
+            }
+            .botao-custom {
+                margin-top: 0px;
+            }
+            div.container {
+                text-align: center;
+            }
+            td.grid {
+                width:33%;
+                text-align: center;
+            }
+        </style>
+
+   </head>
+    <body>
+        <div data-role="page" id="home">
+            <div data-role="header" class="jqm-header">
+                <h2>App Scanner</h2>                
+            </div>
+            <div role="main" class="ui-content jqm-content">
+                
+               
+                <table width="100%" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td width="50%">
+                            <a href="#assinatura" class="botao ui-btn ui-shadow ui-corner-all">
+                                <i class="fa fa-edit"></i><br /><br />
+                                Assinaturas
+                            </a>   
+                            <span id="label-ass-load">Não Carregado</span>
+                        </td>
+                        <td width="50%">
+                            <a href="#cnh" class="botao ui-btn ui-shadow ui-corner-all">
+                                <i class="fa fa-id-card" ></i><br /><br />CNH</a>            
+                            <span id="label-cnh-load">Não Carregado</span>
+                            
+                        </td>
+                    </tr>
+                </table>
+                <br/>
+                <br/>
+                <input type="text" />
+                <button id="btn-submit"> Enviar </button>
+            </div>
+        </div>
+        
+
+        <!-- PAGINA ASSINATURA -->
+        <div data-role="page" class="jqm-demos jqm-home" id="assinatura">
+            <div data-role="header" class="jqm-header">
+                <h2>Assinaturas</h2>                
+            </div>
+
+            <div role="main" class="ui-content jqm-content">
+
+                <table width="100%">
+                    <tr>
+                        <td class="grid">
+                            <a id="btn-ass-camera"><i class="fas fa-camera-retro"></i> Camera</a>
+                        </td><td class="grid">
+                            <a id="btn-ass-galeria"><i class="far fa-images"></i> Galeria</a>
+                        </td><td class="grid">
+                            <a id="btn-ass-salvar"><i class="far fa-save"></i> Salvar</a>
+                        </td>
+                    </tr>
+                </table>
+                
+                <div class="container">
+                    <img src="img/__inicial.jpg" class="image-small" id="img-ass-container">
+                </div>
+
+
+                
+            </div>
+
+        </div>
+
+
+
+
+        <!-- PAGINA CNH -->
+        <div data-role="page" class="jqm-demos jqm-home" id="cnh">
+
+            <div data-role="header" class="jqm-header">
+                <h2>App Scanner</h2>                
+            </div>
+
+            <div role="main" class="ui-content jqm-content">
+                
+                <table width="100%">
+                    <tr>
+                        <td class="grid">
+                            <a id="btn-cnh-camera"><i class="fas fa-camera-retro"></i> Camera</a>
+                        </td><td class="grid">
+                            <a id="btn-cnh-galeria"><i class="far fa-images"></i> Galeria</a>
+                        </td><td class="grid">
+                            <a id="btn-cnh-salvar"><i class="far fa-save"></i> Salvar</a>
+                        </td>
+                    </tr>
+                </table>
+                <br/>
+                <div>
+                    <img src="img/_a.jpg" class="image" id="img-cnh-container" />
+                </div>
+                <br/>
+                <div class="docs-preview clearfix">
+                    <div class="img-preview preview-lg"></div>
+                </div>
+            </div>
+            
+        </div>
+        <script type="text/javascript" src="cordova.js"></script>
+        <script>
+            var cnhBase64 = "";
+            var cnhPosicoes = [0,0,0,0];
+            var assBase64 = "";
+            function initCrop(){
+                var $image = $('#img-cnh-container');
+
+                $image.cropper({
+                    aspectRatio: 26 / 3,
+                    viewMode:"2",
+                    preview: '.img-preview',
+                    crop: function(event) {
+                        cnhPosicoes = [event.detail.x,
+                            event.detail.y,
+                            event.detail.width,
+                            event.detail.height
+                        ];
+                    }
+                });
+
+                // Get the Cropper.js instance after initialized
+                var cropper = $image.data('cropper');
+            }
+            
+
+            $("#btn-ass-salvar").on('click',  assSalvar);
+            $("#btn-ass-camera").on('click',  assCamera);
+            $("#btn-ass-galeria").on('click', assGaleria);
+
+            $("#btn-cnh-salvar").on('click',  cnhSalvar);
+            $("#btn-cnh-camera").on('click',  cnhCamera);
+            $("#btn-cnh-galeria").on('click', cnhGaleria);
+
+            $("#btn-submit").on('click', doSubmit);
+            
+            
+            
+            
+            function assSalvar(){
+                setImgCarregada('ass');
+                $.mobile.changePage( "#home");
+            }
+            function assCamera(){
+                doAssCaptura(Camera.PictureSourceType.CAMERA);
+            }
+            function assGaleria(){
+                doAssCaptura(Camera.PictureSourceType.PHOTOLIBRARY);
+            }            
+            function doAssCaptura(source){
+                var onSuccess = function(imageData) {
+                    $('#img-ass-container').attr('src', "data:image/jpeg;base64," + imageData);
+                    assBase64 = imageData;
+                }
+                doCaptura(source, onSuccess)
+            }
+
+
+
+            function cnhSalvar(){
+                setImgCarregada('cnh');
+                $('#img-cnh-container').cropper('destroy');
+                $.mobile.changePage( "#home");
+            }
+            function cnhCamera(){
+                doCnhCaptura(Camera.PictureSourceType.CAMERA);
+            }
+            function cnhGaleria(){
+                doCnhCaptura(Camera.PictureSourceType.PHOTOLIBRARY);
+            }            
+            function doCnhCaptura(source){
+                var onSuccess = function(imageData) {
+                    cnhBase64 = imageData;
+                    $('#img-cnh-container').attr('src', "data:image/jpeg;base64," + imageData);
+                    initCrop();
+                }
+                doCaptura(source, onSuccess)
+            }
+
+
+            
+            function doSubmit(){
+                var data = {
+                    image: assBase64,
+                    cnh: cnhBase64,
+                    cnhDimensoes: cnhPosicoes
+                }
+                 $.ajax({
+                    type: "POST",
+                    url: 'http://192.168.0.59/processamento',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify(data),
+                    success: function () {
+                        alert("Thanks!"); 
+                    }
+                })
+            }
+
+
+
+
+            function setImgCarregada(tipo){
+                var label = $("#label-"+tipo+"-load");
+                label.empty();
+                label.html("Carregado");
+                label.addClass("img-carregada");
+            }
+            function doCaptura(source, onSuccess){
+                var cameraOptions = {
+                    destinationType: Camera.DestinationType.DATA_URL,
+                    sourceType: source,
+                    allowEdit: true
+                }                
+                navigator.camera.getPicture(onSuccess, onFail, cameraOptions);
+
+            }
+
+            function onFail(message) {
+                alert('Failed because: ' + message);
+            }
+        </script>
+    </body>
+
+</html>
