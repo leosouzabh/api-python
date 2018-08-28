@@ -5,6 +5,7 @@ import mahotas
 from scipy.spatial import distance as dist
 import src.utils as utils
 import src.names as names
+import src.cnh as cnh
 from src.AppException import AppException, QtdeAssinaturasException
 
 blurI = 5
@@ -19,7 +20,14 @@ def putText(img, text, point):
     cv2.putText(img,text, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
 
 
-def extrai(path, identificador):
+def extrai(path, pathCnh, identificador):
+
+    cnhColor = cv2.imread(pathCnh, -1)
+    existeCnh = (cnhColor is not None)
+    
+    if (existeCnh == True):
+        print("Existe")
+
     color = cv2.imread(path, -1)
     color = cv2.resize(color, (0, 0), fx = 0.3, fy = 0.3)
     imgOriginal = color.copy()
@@ -90,10 +98,8 @@ def extrai(path, identificador):
         utils.save('t1_{}.jpg'.format(i), resized, id=identificador)
         im2, contours2, hierarchy = cv2.findContours(resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        print('Ajustando espacos')
-        contours2, resized = ajustaEspacosContorno(contours2, resized)
-        print('espacos ajustados')
-
+        contours2, resized = utils.ajustaEspacosContorno(contours2, resized)
+        
 
         cnts = sorted(contours2, key=functionSort, reverse=True)[0]
         
@@ -107,7 +113,7 @@ def extrai(path, identificador):
         
         #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
         lista[i] = cnts, ass, square
-        utils.save('_img_{}.jpg'.format(i), novaMat, id=identificador)
+        
         
 
     #utils.show(color)
@@ -116,16 +122,28 @@ def extrai(path, identificador):
     sd = cv2.createShapeContextDistanceExtractor()
 
     out = ""
+    outCnh = ""
     sizeOut = ""
     resultadoApi = True
     imgResultado = imgOriginal.copy()
+
+
     for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
         item1   = lista[idx1][0]
         square1 = lista[idx1][2]
         altura1, largura1 = calculaAlturaLargura(item1)
         soma = 0
         
+        item1 = transformaItem(square1, altura1, largura1, identificador, idx1)
+
+        itemCnh = None
+        if ( existeCnh == True ):
+            itemCnh, squareCnh = cnh.validaAssinaturaCnh(cnhColor, square1, identificador)
+            itemCnh = transformaItem(squareCnh, altura1, largura1, identificador, 6)
+            print("Contornos img_6 = " + str(len(itemCnh)))
+
         for idx2 in range(0,5):
+            print("Processando imagem " + str(idx2))
             item2 = lista[idx2][0]
             ass   = lista[idx2][1]
             square2 = lista[idx2][2]
@@ -134,14 +152,31 @@ def extrai(path, identificador):
 
             tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2)
 
-
-
             item2 = transformaItem(square2, altura1, largura1, identificador, idx2)
+
+            print("Contornos img_"+str(idx2)+" = " + str(len(item2)))
 
             #match = hd.computeDistance(item1, item2)
             
-            ida = sd.computeDistance(item1, item2)
-            volta = sd.computeDistance(item2, item1)
+            if ( idx1 != idx2 ):
+                print("Ida " + str(idx2))
+                ida = 1#sd.computeDistance(item1, item2)
+
+                print("Volta" + str(idx2))
+                volta = 1#sd.computeDistance(item2, item1)
+            else :
+                print("Ida " + str(idx2))
+                ida = 0
+                print("Volta" + str(idx2))
+                volta = 0
+
+
+            print("Ida CNH" + str(idx2))
+            idaCnh = 1#round(sd.computeDistance(item2, itemCnh),5)
+
+            print("Volta CNH" + str(idx2))
+            voltaCnh = 1#round(sd.computeDistance(itemCnh, item2),5)
+            outCnh += '{} ==  {} - {}\n'.format(idx2, idaCnh, voltaCnh) 
 
             #ida = dist.euclidean(item1, item2)
             #volta = dist.euclidean(item2, item1)
@@ -150,16 +185,15 @@ def extrai(path, identificador):
             volta = round(volta, 5)
             out += '{} vs {} ({})  ==   {} - {}\n'.format(idx1, idx2, tamanhoCompativel, ida, volta) 
         
-            valorAceitavel = 20
+            valorAceitavel = 5
         
             #BGR
-            if ( idx2 == 0 ):
-                imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
-            elif ( ida < valorAceitavel and volta < valorAceitavel and tamanhoCompativel == True):
+            if ( ida < valorAceitavel and volta < valorAceitavel and tamanhoCompativel == True):
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
             else:
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,0,255))  #falha
                 resultadoApi = False
+        
         
         
 
@@ -168,10 +202,20 @@ def extrai(path, identificador):
             text_file.write(sizeOut)
             text_file.write('\n')
             text_file.write(out)
+            text_file.write('\n')
+            text_file.write(outCnh)
 
     utils.save(names.RESULTADO, imgResultado, id=identificador)
     
-    return resultadoApi
+    percentCnh = {
+        'ass1':20,
+        'ass2':20,
+        'ass3':20,
+        'ass4':20,
+        'ass5':20 
+    }
+
+    return {'folhaAssinatura':resultadoApi, 'resultadoCnh':False, 'percentCnh':percentCnh}
 
 def alturaLarguraCompativel(altura1, largura1, altura2, largura2):
     tolerancia = 100
@@ -204,10 +248,7 @@ def recuperaRatioDilatacao(contornos, imgOriginal, identificador):
         
         preResized = resized.copy()
 
-        print('IMAGEM: ' + str(i))
-        print('=======================')
         for x in range(0, 7):
-            print('Processando Ratio: ' + str(ratio))
             resized = utils.dilatation(preResized, ratio=ratio)
         
             utils.save('ratio{}_{}.jpg'.format(i,x), resized, id=identificador)
@@ -221,9 +262,8 @@ def recuperaRatioDilatacao(contornos, imgOriginal, identificador):
                 break
             else:
                 ratio += 0.3
-        print()
+        
     
-    print('Ratio encontrado: ' + str(ratio))
     return ratio
 
 def percent(indice):
@@ -256,16 +296,12 @@ def functionSortPrimeiroPapel(c):
     x, y, w, h = cv2.boundingRect(c)
     return y
 
-def functionSortPrimeiroEsquerdaParaDireita(c):
-    x, y, w, h = cv2.boundingRect(c)
-    return x
 
 
 
 
 def contorna(img, larguraImg, ass, cor):
     #cv2.drawContours(img, [contorno], -1, cor, 4)
-    print(larguraImg)
     cv2.rectangle(img, (20, ass[0]), (larguraImg-20, ass[1]), cor, 3)
     return img
 
@@ -286,32 +322,9 @@ def recuperaIdxContornoMaisADireita(contours):
         if (x < minX):
             minX = x
             minIdx = idx1
-    print(minX, minIdx)
     return minIdx
 
-def ajustaEspacosContorno(contours, img):
-    print("Contornos encontrados " + str(len(contours)))
-    if (len(contours) == 1):
-        print('Retornou contorno 1')
-        return contours, img
-    else:
-        novaMat = np.zeros(img.shape, dtype = "uint8")
-        contours = sorted(contours, key=functionSortPrimeiroEsquerdaParaDireita)
-        
-        for i, c in enumerate(contours):
-            x, y, w, h = cv2.boundingRect(c)        
-            print(x)
-            if (x == 0):
-                raise AppException("My hovercraft is full of eels")
-            if (i == 1):
-                c = c - [10,0]
-            cv2.drawContours(novaMat, [c], -1, 255, -1)
 
-        #cv2.imshow('img', novaMat)
-        #cv2.waitKey(0)
-
-        im2, contours, hierarchy = cv2.findContours(novaMat, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        return ajustaEspacosContorno(contours, img)
         
 
 
@@ -340,8 +353,7 @@ def recuperaAreaAssinada(canny_img, imgOriginal, identificador):
     min_x, min_y = width, height
     max_x = max_y = 0
 
-    print('h{} w{}'.format(height, width))
-
+    
     # computes the bounding box for the contour, and draws it on the frame,
     for contour, hier in zip(contours, hierarchy):
         if cv2.contourArea(contour) > 400:
@@ -352,7 +364,6 @@ def recuperaAreaAssinada(canny_img, imgOriginal, identificador):
     if max_x - min_x > 0 and max_y - min_y > 0:
         cv2.rectangle(canny_img, (min_x, min_y), (max_x, max_y), (255, 0, 0), 2)
         m = 30
-        #print('{} x={} - y{}'.format(i,x,y))
         a = min_y-m if min_y-m > 0 else 0
         b = max_y+m if max_y+m <= height else height
         c = min_x-m if min_x-m > 0 else 0
@@ -365,7 +376,6 @@ def recuperaAreaAssinada(canny_img, imgOriginal, identificador):
 
 #TODO ajustar esse metodo
 def ajustaContorno(contours2):
-    print('Qtde('+str(i)+')'  + str(len(contours2)))
     if ( i == 2 ):
         for i2, c2 in enumerate(contours2):
             if (cv2.contourArea(c2) > 790):
@@ -379,7 +389,7 @@ def ajustaContorno(contours2):
 
                 cv2.imshow("t2", debugMat)
                 cv2.waitKey(0)
-        print()
+        
     
     cnts = sorted(contours2, key=functionSort, reverse=True)[0]
 
@@ -455,7 +465,6 @@ def removeContornosPqnos(cnts):
             retorno.append(c)
             totalRemovidos+=1
 
-    print('Total removidos: ' + str(totalRemovidos))
     return retorno
 
 def aumentaCanvas(img, identificador):
@@ -505,8 +514,25 @@ def transformaItem(square2, altura1, largura1, identificador, idx2):
     cv2.drawContours(novaMat, [cnts], -1, 255, -1)
     
     
-    utils.save('resized_{}.jpg'.format(idx2), novaMat, id=identificador)
-    return cnts
+    utils.save('_img_{}.jpg'.format(idx2), novaMat, id=identificador)
+    
+    #recarrega a imagem do disco, suaviza e contorna
+    path = utils.buildPath(identificador, path="_img_"+str(idx2)+".jpg")
+    imgGray = cv2.imread(path, cv2.COLOR_BGR2GRAY)    
+    #utils.save('debug_{}_antes.jpg'.format(idx2), imgGray, id=identificador)
+    imgGray = cv2.medianBlur(imgGray, 5)
+    utils.save('__{}_depois.jpg'.format(idx2), imgGray, id=identificador)
+
+    retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+
+    im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts2 = contours[0]
+
+    debugMat = np.zeros(imgGray.shape, dtype = "uint8")
+    cv2.drawContours(debugMat, [cnts2], -1, 255, -1 )
+    utils.save('debug_{}.jpg'.format(idx2), debugMat, id=identificador)
+    
+    return cnts2
 
 if __name__ == '__main__':
 

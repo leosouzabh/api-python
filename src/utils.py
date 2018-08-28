@@ -88,7 +88,7 @@ def removeContornosPqnosImg(img):
     novaImg = np.zeros(img.shape, dtype = "uint8")
     
     #show("window", img)
-    img = dilatation(img, ratio=0.05)
+    #   img = dilatation(img, ratio=0.05)
     #show("window", img)
 
     im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -98,8 +98,8 @@ def removeContornosPqnosImg(img):
         if tamanhoContorno > 20:
             cv2.drawContours(novaImg, [c], -1, 255, -1)
 
-    novaImg = cv2.blur(novaImg, (5,5))
-    novaImg = dilatation(novaImg, ratio=0.1)
+    #novaImg = cv2.blur(novaImg, (5,5))
+    novaImg = dilatation(novaImg, ratio=0.3)
     
     im2, contours, hierarchy = cv2.findContours(novaImg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     novaImg = np.zeros(img.shape, dtype = "uint8")
@@ -107,3 +107,30 @@ def removeContornosPqnosImg(img):
 
     return novaImg
 
+def ajustaEspacosContorno(contours, img):
+    #print("Contornos encontrados " + str(len(contours)))
+    if (len(contours) == 1):
+        #print('Retornou contorno 1')
+        return contours, img
+    else:
+        novaMat = np.zeros(img.shape, dtype = "uint8")
+        contours = sorted(contours, key=functionSortPrimeiroEsquerdaParaDireita)
+        
+        for i, c in enumerate(contours):
+            x, y, w, h = cv2.boundingRect(c)        
+            if (x == 0):
+                raise AppException("My hovercraft is full of eels")
+            if (i == 1):
+                c = c - [10,0]
+            cv2.drawContours(novaMat, [c], -1, 255, -1)
+
+        #cv2.imshow('img', novaMat)
+        #cv2.waitKey(0)
+
+        im2, contours, hierarchy = cv2.findContours(novaMat, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        return ajustaEspacosContorno(contours, img)
+
+def functionSortPrimeiroEsquerdaParaDireita(c):
+    x, y, w, h = cv2.boundingRect(c)
+    return x
+    

@@ -18,8 +18,10 @@ class ProcessamentoRest(Resource):
         try:
             bo = Processamento()
             base64Image = request.json['image']
+            cnh64Image = request.json['cnh']
+            cnhDimensoes = request.json['cnhDimensoes']
 
-            resultado, identificador = bo.processaImagem(base64Image)
+            resultado, identificador = bo.processaImagem(base64Image, cnh64Image, cnhDimensoes)
             result = {"resultado":resultado, "erro":False, "identificador":identificador}
             return jsonify(result)
         
@@ -35,44 +37,6 @@ class ProcessamentoRest(Resource):
         return "ok"
 
 
-
-class CnhValidacaoRest(Resource):
-    def post(self):
-        try:
-            bo = Processamento()
-            base64Image = request.json['image']
-
-            resultado, identificador = bo.extraiAssinatura(base64Image)
-            result = {"resultado":resultado, "erro":False, "identificador":identificador}
-            return jsonify(result)
-        
-        except AppException as error:
-            result = {"erro": True, "message": str(error)}
-            return jsonify(result)
-
-        except QtdeAssinaturasException as error:
-            result = {"erro": True, "message": str(error), "identificador":error.identificador}
-            return jsonify(result)
-
-
-class CnhExtracaoRest(Resource):
-    def post(self):
-        try:
-            bo = Processamento()
-            base64Image = request.json['image']
-
-            resultado, identificador = bo.extraiAssinatura(base64Image)
-            result = {"resultado":resultado, "erro":False, "identificador":identificador}
-            return jsonify(result)
-        
-        except AppException as error:
-            result = {"erro": True, "message": str(error)}
-            return jsonify(result)
-
-        except QtdeAssinaturasException as error:
-            result = {"erro": True, "message": str(error), "identificador":error.identificador}
-            return jsonify(result)        
-    
 
 class IndexRest(Resource):
     def get(self):
@@ -100,19 +64,26 @@ class MockRest(Resource):
     def get(self):
         try:
             encoded_string = ''
+            encoded_cnh = ''
+
             image = request.args.get('image')
             image = '__inicial.jpg' if image == None else image
             with open("C:\\dev\\git\\python\\api\\data\\"+image, "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
+
+            with open("C:\\dev\\git\\python\\api\\data\\cnh\\"+image, "rb") as image_file:
+                encoded_cnh = base64.b64encode(image_file.read())                
                 
             bo = Processamento()
             base64Image = encoded_string
-
-            resultado, identificador = bo.processaImagem(base64Image)
-
-            result = {"erro":False, "resultado":resultado, "identificador":identificador}
+            
+            cnhDimensoes = [634, 1003, 1633, 213]
+            resultado, identificador = bo.processaImagem(encoded_string, encoded_cnh, cnhDimensoes)
+            result = {"resultado":resultado, "erro":False, "identificador":identificador}
             return jsonify(result)
-
+            
+            
+            
         except AppException as error:
             result = {"erro": True, "message": str(error)}
             return jsonify(result)
@@ -123,7 +94,7 @@ class MockRest(Resource):
 
 
 api.add_resource(ProcessamentoRest, '/processamento') 
-api.add_resource(CnhValidacaoRest, '/cnh') 
+#api.add_resource(CnhValidacaoRest, '/cnh') 
 api.add_resource(IndexRest, '/') 
 api.add_resource(MockRest, '/mock') 
 
