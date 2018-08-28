@@ -119,7 +119,7 @@ def ajustaEspacosContorno(contours, img):
         for i, c in enumerate(contours):
             x, y, w, h = cv2.boundingRect(c)        
             if (x == 0):
-                raise AppException("My hovercraft is full of eels")
+                raise AppException("Erro ao ajustar contornos.")
             if (i == 1):
                 c = c - [10,0]
             cv2.drawContours(novaMat, [c], -1, 255, -1)
