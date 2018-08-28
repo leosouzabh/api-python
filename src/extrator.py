@@ -146,7 +146,7 @@ def extrai(path, pathCnh, identificador):
             itemCnh = transformaItem(squareCnh, altura1, largura1, identificador, 6)
             print("Contornos img_6 = " + str(len(itemCnh)))
 
-        for idx2 in range(0,1):
+        for idx2 in range(0,5):
             print("Processando imagem " + str(idx2))
             item2 = lista[idx2][0]
             ass   = lista[idx2][1]
