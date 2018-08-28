@@ -129,7 +129,7 @@ def extrai(path, pathCnh, identificador):
 
     percentCnh = []
 
-    valorAceitavel = 5
+    valorAceitavel = 9
     valorAceitavelCnh = valorAceitavel
 
     for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
