@@ -22,6 +22,13 @@
             .active {
                 color:red;
             }
+            .texto {
+                width:20px;
+                margin-right:35px;
+            }
+            .legenda {
+                margin-right:5px;
+            }
         </style>
 
     </head>
@@ -36,6 +43,38 @@
                     </nav>
                     <div class="container1">
                         <div class="row">
+                            
+                            <div class="col-sm-12 col-xs-12">
+                                <div class="panel-group">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4 class="panel-title">Parametros</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <form class="form-inline">
+                                                
+                                                <div class="form-group">
+                                                    <label class="legenda" for="distancia">Distancia Ptos: </label>
+                                                    <input type="text" class="form-control texto" id="distancia" size="6">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label class="legenda" for="tamanho">Tamanho: </label>
+                                                    <input type="text" class="form-control texto" id="tamanho" size="6">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="legenda" for="densidade">Densidade: </label>
+                                                    <input type="text" class="form-control texto" id="densidade" size="6">
+                                                </div>
+
+                                                <button type="submit" class="btn btn-success">Update</button>
+                                            </form>
+                                         </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="col-sm-2">
                                 <div class="panel-group">
                                     <div class="panel panel-default">
@@ -83,6 +122,39 @@
                 $("#menu").append("<li><a href='#' id='"+e.cod+"' class='link' onclick='load(\""+e.cod+"\", \""+e.desc+"\")'>"+e.desc+"</a></li>");
             })
         });
+
+        var url_param = "../../param";
+        $.get( url_param, function( data ) {
+            $("#distancia").val(data.distanciaPontos);
+            $("#tamanho").val(data.tamanho);
+            $("#densidade").val(data.densidade);
+        });
+
+        $(".form-inline").submit(function(){
+
+            var data = {
+                "distanciaPontos": $("#distancia").val(),
+                "tamanho": $("#tamanho").val(),
+                "densidade": $("#densidade").val()
+            }
+            $.ajax
+            ({
+                type: "POST",
+                url: url_param,
+                dataType: 'json',
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+                success: function () {
+                    alert('sucesso')
+                },
+                failure: function () {
+                    alert('::::::::::; ERRO :::::::::::::')
+                }
+            })
+            
+            console.log('ok');
+            return false;
+        })
 
         function load(data, desc){
 

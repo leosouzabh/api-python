@@ -6,6 +6,7 @@ from scipy.spatial import distance as dist
 import src.utils as utils
 import src.names as names
 import src.cnh as cnh
+import src.db.database as db
 from src.AppException import AppException, QtdeAssinaturasException
 
 blurI = 5
@@ -21,6 +22,21 @@ def putText(img, text, point):
 
 
 def extrai(path, pathCnh, identificador):
+
+    paramsDb = db.select()
+    
+    valorAceitavel    = paramsDb[1]
+    valorAceitavelCnh = paramsDb[1]
+    whTolerancia      = paramsDb[2]
+    pxWhiteTolerancia = paramsDb[3]
+    
+    paramsOut = """
+Tolerancia Pontos: {0}
+Tolerancia Pontos CNH: {1}
+Variacao no tamanho: {2}%
+Tolerancia densidade: {3}\n
+    """.format(valorAceitavel, valorAceitavelCnh, whTolerancia, pxWhiteTolerancia)
+
 
     cnhColor = cv2.imread(pathCnh, -1)
     existeCnh = (cnhColor is not None)
@@ -129,8 +145,7 @@ def extrai(path, pathCnh, identificador):
 
     percentCnh = []
 
-    valorAceitavel = 9
-    valorAceitavelCnh = valorAceitavel
+    
 
     for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
         item1   = lista[idx1][0]
@@ -154,7 +169,7 @@ def extrai(path, pathCnh, identificador):
             altura2, largura2 = calculaAlturaLargura(item2)
             sizeOut += 'Dimensao {} x {} \n'.format(largura2, altura2)
 
-            tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2)
+            tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2, whTolerancia)
 
             item2 = transformaItem(square2, altura1, largura1, identificador, idx2)
 
@@ -180,9 +195,12 @@ def extrai(path, pathCnh, identificador):
                 idaCnh = round(sd.computeDistance(item2, itemCnh),5)
 
                 print("Volta CNH" + str(idx2))
-                voltaCnh = round(sd.computeDistance(itemCnh, item2),5)            
-                outCnh += '{} ==  {} - {}\n'.format(idx2, idaCnh, voltaCnh) 
-                percentCnh.append( calculaSimilaridade(idaCnh, voltaCnh, valorAceitavelCnh) )
+                voltaCnh = round(sd.computeDistance(itemCnh, item2),5)      
+                
+                percentSimCnh = calculaSimilaridade(idaCnh, voltaCnh, valorAceitavelCnh)      
+
+                outCnh += '{} ==  {} - {} = {}%\n'.format(idx2, idaCnh, voltaCnh, percentSimCnh) 
+                percentCnh.append( percentSimCnh )
 
             #ida = dist.euclidean(item1, item2)
             #volta = dist.euclidean(item2, item1)
@@ -205,6 +223,8 @@ def extrai(path, pathCnh, identificador):
 
         pathTxt = utils.buildPath(identificador, path="calc.txt")
         with open(pathTxt, "w") as text_file:
+            text_file.write(paramsOut)
+            text_file.write('\n')
             text_file.write(sizeOut)
             text_file.write('\n')
             text_file.write(out)
@@ -224,8 +244,7 @@ def calculaSimilaridade(idaCnh, voltaCnh, tolerancia):
     return 100 - (maior * 100 / tolerancia)
 
 
-def alturaLarguraCompativel(altura1, largura1, altura2, largura2):
-    tolerancia = 100
+def alturaLarguraCompativel(altura1, largura1, altura2, largura2, tolerancia):    
     if ( calcPercentual(largura1, largura2) <= tolerancia and calcPercentual(altura1, altura2) <= tolerancia):
         return True
     else:

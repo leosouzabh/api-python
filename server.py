@@ -9,6 +9,7 @@ import cv2
 import src.utils as utils
 import base64 
 from src.AppException import AppException, QtdeAssinaturasException
+import src.db.database as db
 
 app = Flask(__name__, static_url_path='/static')
 api = Api(app)
@@ -38,6 +39,27 @@ class ProcessamentoRest(Resource):
 
 
 
+
+class ParamRest(Resource):
+    def get(self):
+        param = db.select()
+        distanciaPontos = param[1]
+        tamanho = param[2]
+        densidade = param[3]
+        return jsonify({
+            "distanciaPontos":distanciaPontos,
+            "tamanho":tamanho,
+            "densidade":densidade
+        })
+
+    def post(self):
+        distanciaPontos  = request.json['distanciaPontos']
+        tamanho          = request.json['tamanho']
+        densidade        = request.json['densidade']
+
+        db.update(distanciaPontos, tamanho, densidade)
+
+
 class IndexRest(Resource):
     def get(self):
         dirname = utils.buildPathRoot()
@@ -60,6 +82,9 @@ class IndexRest(Resource):
         return datetime_object.strftime('%d/%m %H:%M')
         
 
+'''
+    http://localhost/mock?image=cnh.jpg
+'''
 class MockRest(Resource):
     def get(self):
         try:
@@ -68,10 +93,10 @@ class MockRest(Resource):
 
             image = request.args.get('image')
             image = '__inicial.jpg' if image == None else image
-            with open("C:\\dev\\git\\python\\api\\data\\"+image, "rb") as image_file:
+            with open("/app/data/"+image, "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
 
-            with open("C:\\dev\\git\\python\\api\\data\\cnh\\"+image, "rb") as image_file:
+            with open("/app/data/cnh/"+image, "rb") as image_file:
                 encoded_cnh = base64.b64encode(image_file.read())                
                 
             bo = Processamento()
@@ -96,7 +121,8 @@ class MockRest(Resource):
 api.add_resource(ProcessamentoRest, '/processamento') 
 #api.add_resource(CnhValidacaoRest, '/cnh') 
 api.add_resource(IndexRest, '/') 
-api.add_resource(MockRest, '/mock') 
+api.add_resource(MockRest, '/mock')
+api.add_resource(ParamRest, '/param') 
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 80))

@@ -28,37 +28,19 @@ def create():
     print ('Inserting initial data')            
     conn.execute("""
     insert into parametro (tolerancia, perc_tamanho, pix_branco)
-    values (20, 50, 100)
+    values (9, 100, 100)
     """)
 
     print ('data inserted')            
     conn.commit()
-
-def update(distanciaPontos, tamanho, densidade):
-    conn,c = connect()
-    conn.execute("""
-        update parametro set 
-            tolerancia = {0},
-            perc_tamanho = {1},
-            pix_branco = {2}
-    """.format(distanciaPontos, tamanho, densidade))    
-    conn.commit()
-    conn.close()
-
-    
-
-               
-
+              
 def select():
     conn,c = connect()
     c.execute('SELECT * FROM parametro')    
     all_rows = c.fetchall()
     conn.close()
 
-    return all_rows[0]
-    
-
+    return all_rows
 
 if __name__ == '__main__':
-    #select()
-    update(1,1,1)
+    create()  
