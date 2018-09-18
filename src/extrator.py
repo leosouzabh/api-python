@@ -30,13 +30,14 @@ def extrai(path, pathCnh, identificador):
     whTolerancia      = paramsDb[2]
     pxWhiteTolerancia = paramsDb[3]
     
-    paramsOut = """
+    paramsOut = """ PARAMETROSe
 Tolerancia Pontos: {0}
 Tolerancia Pontos CNH: {1}
 Variacao no tamanho: {2}%
-Tolerancia densidade: {3}\n
+Tolerancia densidade: {3}%\n
     """.format(valorAceitavel, valorAceitavelCnh, whTolerancia, pxWhiteTolerancia)
 
+    densidadeOut = ""
 
     cnhColor = cv2.imread(pathCnh, -1)
     existeCnh = (cnhColor is not None)
@@ -104,7 +105,8 @@ Tolerancia densidade: {3}\n
         
         #resized = cv2.blur(resized, (5,5))
         retval, resized = cv2.threshold(resized, 120, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-        resized = utils.removeContornosPqnosImg(resized)
+        utils.save('th_roi_{}.jpg'.format(i), resized, id=identificador)
+        resized, densidade = utils.removeContornosPqnosImg(resized)
 
         utils.save('t_{}.jpg'.format(i), resized, id=identificador)
         #cv2.waitKey(0) 
@@ -128,7 +130,8 @@ Tolerancia densidade: {3}\n
         utils.save('square_{}.jpg'.format(i), square, id=identificador)
         
         #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
-        lista[i] = cnts, ass, square
+        densidadeOut += "Densidade {} = {}\n".format(i, densidade)
+        lista[i] = cnts, ass, square, densidade
         
         
 
@@ -150,6 +153,7 @@ Tolerancia densidade: {3}\n
     for idx1 in range(0,1): #recupera apenas a primeira imagem e a compara com as outras
         item1   = lista[idx1][0]
         square1 = lista[idx1][2]
+        dens1 = lista[idx1][3]
         altura1, largura1 = calculaAlturaLargura(item1)
         soma = 0
         
@@ -166,10 +170,12 @@ Tolerancia densidade: {3}\n
             item2 = lista[idx2][0]
             ass   = lista[idx2][1]
             square2 = lista[idx2][2]
+            dens2 = lista[idx2][3]
             altura2, largura2 = calculaAlturaLargura(item2)
             sizeOut += 'Dimensao {} x {} \n'.format(largura2, altura2)
 
             tamanhoCompativel = alturaLarguraCompativel(altura1, largura1, altura2, largura2, whTolerancia)
+            densidadeCompativel = calcDensidadeCompativel(dens1, dens2, pxWhiteTolerancia)
 
             item2 = transformaItem(square2, altura1, largura1, identificador, idx2)
 
@@ -205,14 +211,14 @@ Tolerancia densidade: {3}\n
             #ida = dist.euclidean(item1, item2)
             #volta = dist.euclidean(item2, item1)
             
-            out += '{} vs {} ({})  ==   {} - {}\n'.format(idx1, idx2, tamanhoCompativel, ida, volta) 
+            out += '{} vs {} (T{}, D{})  ==   {} - {}\n'.format(idx1, idx2, tamanhoCompativel, densidadeCompativel, ida, volta) 
         
             
 
             
         
             #BGR
-            if ( ida < valorAceitavel and volta < valorAceitavel and tamanhoCompativel == True):
+            if ( ida < valorAceitavel and volta < valorAceitavel and tamanhoCompativel == True and densidadeCompativel == True):
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
             else:
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,0,255))  #falha
@@ -227,6 +233,8 @@ Tolerancia densidade: {3}\n
             text_file.write('\n')
             text_file.write(sizeOut)
             text_file.write('\n')
+            text_file.write(densidadeOut)
+            text_file.write('\n')
             text_file.write(out)
             text_file.write('\n')
             text_file.write(outCnh)
@@ -235,6 +243,15 @@ Tolerancia densidade: {3}\n
     
     return {'folhaAssinatura':resultadoApi, 'resultadoCnh':False, 'percentCnh':percentCnh}
 
+
+def calcDensidadeCompativel(dens1, dens2, tolerancia):
+    print(dens1)
+    print(dens2)
+    percent = utils.calculaPercent(int(dens1), int(dens2))
+    if (percent <= tolerancia):
+        return True
+    else:
+        return False
 
 def calculaSimilaridade(idaCnh, voltaCnh, tolerancia):
     maior = idaCnh
@@ -305,7 +322,7 @@ def extraiContornos(imgGray, identificador):
     retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     utils.save('postTh.jpg', imgGray, id=identificador)
     
-    imgGray = utils.removeContornosPqnosImg(imgGray)
+    imgGray, densidade = utils.removeContornosPqnosImg(imgGray)
     utils.save('novosContornos.jpg', imgGray, id=identificador)
 
     #imgGray = aumentaCanvas(imgGray, identificador)

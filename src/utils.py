@@ -98,6 +98,8 @@ def removeContornosPqnosImg(img):
         if tamanhoContorno > 20:
             cv2.drawContours(novaImg, [c], -1, 255, -1)
 
+    densidade = calculaQtdePixelBranco(novaImg)
+
     #novaImg = cv2.blur(novaImg, (5,5))
     novaImg = dilatation(novaImg, ratio=0.3)
     
@@ -105,7 +107,14 @@ def removeContornosPqnosImg(img):
     novaImg = np.zeros(img.shape, dtype = "uint8")
     cv2.drawContours(novaImg, contours, -1, 255, -1)
 
-    return novaImg
+    return novaImg, densidade
+
+def calculaQtdePixelBranco(img):
+    n_white_pix = np.sum(img == 255)
+    return n_white_pix
+
+def calculaPercent(cem, x):
+    return abs(int(100 - (100 * x / cem)))      
 
 def ajustaEspacosContorno(contours, img):
     #print("Contornos encontrados " + str(len(contours)))

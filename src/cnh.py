@@ -9,7 +9,7 @@ def extraiContornos(imgGray, identificador):
     retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
     utils.save('cnh_postTh.jpg', imgGray, id=identificador)
     
-    imgGray = utils.removeContornosPqnosImg(imgGray)
+    imgGray, densidade = utils.removeContornosPqnosImg(imgGray)
     utils.save('cnh_novosContornos.jpg', imgGray, id=identificador)
 
     imgGray = utils.dilatation(imgGray, ratio=0.2)
@@ -54,7 +54,7 @@ def validaAssinaturaCnh(cnhColor, square1, identificador):
     #imgGray = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)    
     
     retval, imgGray = cv2.threshold(imgGray, 2, 255, type = cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-    imgGray = utils.removeContornosPqnosImg(imgGray)
+    imgGray, densidade = utils.removeContornosPqnosImg(imgGray)
     im2, contours, hierarchy = cv2.findContours(imgGray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #contours, resized = utils.ajustaEspacosContorno(contours, imgTh)
     cnts2 = contours[0]
