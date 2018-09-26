@@ -129,7 +129,7 @@ Tolerancia densidade: {3}%\n
         square = novaMat[yA  :yA + hA, xA : xA + wA ]
         utils.save('square_{}.jpg'.format(i), square, id=identificador)
         
-        #lista[i] = mahotas.features.zernike_moments(novaMat, 21)
+        #moment = mahotas.features.zernike_moments(square, 21)
         densidadeOut += "Densidade {} = {}\n".format(i, densidade)
         lista[i] = cnts, ass, square, densidade
         
@@ -184,16 +184,16 @@ Tolerancia densidade: {3}%\n
             #match = hd.computeDistance(item1, item2)
             
             if ( idx1 != idx2 ):
-                print("Ida " + str(idx2))
-                ida = round(sd.computeDistance(item1, item2), 5)
+                idaSD = round(sd.computeDistance(item1, item2), 5)
+                voltaSD = round(sd.computeDistance(item2, item1), 5)
 
-                print("Volta" + str(idx2))
-                volta = round(sd.computeDistance(item2, item1), 5)
+                idaHD = round(hd.computeDistance(item1, item2), 5)
+                voltaHD = round(hd.computeDistance(item2, item1), 5)
             else :
-                print("Ida " + str(idx2))
-                ida = 0
-                print("Volta" + str(idx2))
-                volta = 0
+                idaSD = 0
+                voltaSD = 0
+                idaHD = 0
+                voltaHD = 0
 
 
             if ( existeCnh == True ):
@@ -211,14 +211,16 @@ Tolerancia densidade: {3}%\n
             #ida = dist.euclidean(item1, item2)
             #volta = dist.euclidean(item2, item1)
             
-            out += '{} vs {} (T{}, D{})  ==   {} - {}\n'.format(idx1, idx2, tamanhoCompativel, densidadeCompativel, ida, volta) 
+            out += '{} vs {} (T{}, D{})  \n'.format(idx1, idx2, tamanhoCompativel, densidadeCompativel) 
+            out += '    SD: {} - {} \n'.format(idaSD, voltaSD) 
+            out += '    HD: {} - {} \n'.format(idaHD, voltaHD) 
         
             
 
             
         
             #BGR
-            if ( ida < valorAceitavel and volta < valorAceitavel and tamanhoCompativel == True and densidadeCompativel == True):
+            if ( idaSD < valorAceitavel and voltaSD < valorAceitavel and tamanhoCompativel == True and densidadeCompativel == True):
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,255,0)) #sucesso
             else:
                 imgResultado = contorna(imgResultado, larguraImg, ass, (0,0,255))  #falha
