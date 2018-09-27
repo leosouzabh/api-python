@@ -38,6 +38,31 @@ class ProcessamentoRest(Resource):
         return "ok"
 
 
+class ReprocessamentoRest(Resource):
+    def get(self):
+        try:
+            
+            bo = Processamento()
+            bo.reprocessaImagem("20180927_214220-815483")
+            """
+            with open("yourfile.ext", "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read())
+
+            base64Image = request.json['image']
+            cnh64Image = request.json['cnh']
+            cnhDimensoes = request.json['cnhDimensoes']
+
+            resultado, identificador = bo.processaImagem(base64Image, cnh64Image, cnhDimensoes)
+            result = {"resultado":resultado, "erro":False, "identificador":identificador}
+            return jsonify(result)
+            """
+        except AppException as error:
+            result = {"erro": True, "message": str(error)}
+            return jsonify(result)
+
+        except QtdeAssinaturasException as error:
+            result = {"erro": True, "message": str(error), "identificador":error.identificador}
+            return jsonify(result)
 
 
 class ParamRest(Resource):
@@ -123,6 +148,7 @@ api.add_resource(ProcessamentoRest, '/processamento')
 api.add_resource(IndexRest, '/') 
 api.add_resource(MockRest, '/mock')
 api.add_resource(ParamRest, '/param') 
+api.add_resource(ReprocessamentoRest, '/reprocessamento') 
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 80))

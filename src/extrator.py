@@ -30,7 +30,7 @@ def extrai(path, pathCnh, identificador):
     whTolerancia      = paramsDb[2]
     pxWhiteTolerancia = paramsDb[3]
     
-    paramsOut = """ PARAMETROSe
+    paramsOut = """ PARAMETROS
 Tolerancia Pontos: {0}
 Tolerancia Pontos CNH: {1}
 Variacao no tamanho: {2}%
@@ -189,18 +189,20 @@ Tolerancia densidade: {3}%\n
 
                 idaHD = round(hd.computeDistance(item1, item2), 5)
                 voltaHD = round(hd.computeDistance(item2, item1), 5)
+
+                idaMM = calculaMoment(item1, idx1, item2, idx2, identificador)
+                voltaMM = idaMM
             else :
                 idaSD = 0
                 voltaSD = 0
                 idaHD = 0
                 voltaHD = 0
+                idaMM = 0
+                voltaMM = 0
 
 
             if ( existeCnh == True ):
-                print("Ida CNH" + str(idx2))
                 idaCnh = round(sd.computeDistance(item2, itemCnh),5)
-
-                print("Volta CNH" + str(idx2))
                 voltaCnh = round(sd.computeDistance(itemCnh, item2),5)      
                 
                 percentSimCnh = calculaSimilaridade(idaCnh, voltaCnh, valorAceitavelCnh)      
@@ -214,6 +216,7 @@ Tolerancia densidade: {3}%\n
             out += '{} vs {} (T{}, D{})  \n'.format(idx1, idx2, tamanhoCompativel, densidadeCompativel) 
             out += '    SD: {} - {} \n'.format(idaSD, voltaSD) 
             out += '    HD: {} - {} \n'.format(idaHD, voltaHD) 
+            out += '    MH: {} - {} \n'.format(idaMM, voltaMM) 
         
             
 
@@ -245,6 +248,30 @@ Tolerancia densidade: {3}%\n
     
     return {'folhaAssinatura':resultadoApi, 'resultadoCnh':False, 'percentCnh':percentCnh}
 
+
+def calculaMoment(cont1, idx1, cont2, idx2, identificador):
+    momentA = getMoment(cont1, idx1, identificador)
+    momentB = getMoment(cont2, idx2, identificador)
+
+    valor = dist.euclidean(momentA, momentB)
+    return round(valor, 5)
+
+
+def getMoment(cnts, idx, identificador):
+    
+    x, y, w, h = cv2.boundingRect(cnts)
+    outline = np.ones((h,w), dtype = "uint8")
+    outline = cv2.copyMakeBorder(outline, 15, 15, 15, 15, cv2.BORDER_CONSTANT, value = 0)
+    
+    cv2.drawContours(outline, [cnts], -1, 255, -1)
+    outline = cv2.bitwise_not(outline) 
+    utils.save('mahota_{}.jpg'.format(idx), outline, id=identificador)
+
+    
+    moments = mahotas.features.zernike_moments(outline, 62)
+    return moments 
+
+	
 
 def calcDensidadeCompativel(dens1, dens2, tolerancia):
     print(dens1)
