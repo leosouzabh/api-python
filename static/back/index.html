@@ -95,12 +95,13 @@
                                     </div>
                                     <div class="panel-body">
                                         <div class="row">
-                                            <div class="col-sm-12" id="texto">
-                                                texto
+                                            <div class="col-sm-2">
+                                                <input type="text" id="id" />
+                                                <button id="reprocessa" value="Reprocessar" onclick="reprocessa()">Reprocessa</button>
+                                                <div id="texto">texto</div>
+
                                             </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-sm-12" id="conteudo">
+                                            <div class="col-sm-10" id="conteudo">
                                                 
                                             </div>
                                         </div>
@@ -155,9 +156,14 @@
             console.log('ok');
             return false;
         })
-
+        function reprocessa(){
+            var id = $("#id").val();
+            $.get( "../../reprocessamento?idx="+id, function( data ) {
+                alert("Reprocessado");
+            }); 
+        }
         function load(data, desc){
-
+            $("#id").val(data);
             $("a").removeClass('active');
             $("#"+data).addClass('active');
             
@@ -182,6 +188,7 @@
             });
 
             conteudo = ['debug_0.jpg', 'debug_1.jpg', 'debug_2.jpg', 'debug_3.jpg','debug_4.jpg', 'debug_6.jpg', 
+            'mahota_0.jpg','mahota_1.jpg','mahota_2.jpg','mahota_3.jpg','mahota_4.jpg',
                 '_img_0.jpg', '_img_1.jpg', '_img_2.jpg', '_img_3.jpg', '_img_4.jpg','_img_6.jpg',
                 '__cnh-assinatura.jpg', 'cnh_antesTh.jpg', 'cnh_novosContornos.jpg', 'cnh_resized.jpg',                
                 'roi_0.jpg', 'roi_1.jpg', 'roi_2.jpg', 'roi_3.jpg', 'roi_4.jpg' ];

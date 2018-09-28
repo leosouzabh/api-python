@@ -43,7 +43,7 @@ class ReprocessamentoRest(Resource):
         try:
             
             bo = Processamento()
-            bo.reprocessaImagem("20180927_214220-815483")
+            bo.reprocessaImagem(request.args.get('idx'))
             """
             with open("yourfile.ext", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())

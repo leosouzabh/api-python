@@ -214,9 +214,9 @@ Tolerancia densidade: {3}%\n
             #volta = dist.euclidean(item2, item1)
             
             out += '{} vs {} (T{}, D{})  \n'.format(idx1, idx2, tamanhoCompativel, densidadeCompativel) 
-            out += '    SD: {} - {} \n'.format(idaSD, voltaSD) 
-            out += '    HD: {} - {} \n'.format(idaHD, voltaHD) 
-            out += '    MH: {} - {} \n'.format(idaMM, voltaMM) 
+            out += '----SD: {} - {} \n'.format(idaSD, voltaSD) 
+            out += '----HD: {} - {} \n'.format(idaHD, voltaHD) 
+            out += '----MH: {} - {} \n'.format(idaMM, voltaMM) 
         
             
 
